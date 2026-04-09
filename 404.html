@@ -14,7 +14,7 @@
       // Note: this 404.html file must be at least 512 bytes for it to work
       // with Internet Explorer (it is currently > 560 bytes)
 
-      var segmentCount = 0; // the number of directories deep within the github pages site
+      var segmentCount = 1; // the number of directories deep within the github pages site (TestN8NAgents)
 
       var l = window.location;
       sessionStorage.redirect = l.pathname + l.search;
@@ -27,7 +27,7 @@
             .split("/")
             .slice(0, 1 + segmentCount)
             .join("/") +
-          "/"
+          "/?/"
       );
     </script>
   </head>
