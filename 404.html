@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Single Page Apps for GitHub Pages</title>
+    <script type="text/javascript">
+      // Single Page Apps for GitHub Pages
+      // https://github.com/rafgraph/spa-github-pages
+      // This script takes the current url and converts the path and query
+      // string into just a query string, and then redirects the browser
+      // to the new url with only a query string and hash fragment,
+      // e.g. https://example.com/foo/bar?fizz=buzz becomes
+      // https://example.com/?/foo/bar&fizz=buzz
+      // Note: this 404.html file must be at least 512 bytes for it to work
+      // with Internet Explorer (it is currently > 560 bytes)
+
+      var segmentCount = 0; // the number of directories deep within the github pages site
+
+      var l = window.location;
+      sessionStorage.redirect = l.pathname + l.search;
+      location.replace(
+        l.protocol +
+          "//" +
+          l.hostname +
+          (l.port ? ":" + l.port : "") +
+          l.pathname
+            .split("/")
+            .slice(0, 1 + segmentCount)
+            .join("/") +
+          "/"
+      );
+    </script>
+  </head>
+  <body> </body>
+</html>
