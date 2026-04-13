@@ -22,7 +22,7 @@ export interface ClaimsState {
 }
 
 const CLAIMS_API_BASE = 'https://noetherip-d-doc-filling.azurewebsites.net/api/DocProcessing/claims';
-const N8N_WEBHOOK_URL = 'https://n8n.noetherip.com/webhook/wipo-claims';
+const N8N_WEBHOOK_URL = 'https://n8n.noetherip.com/webhook/v1/wipo-claims?model=LocalLLM';
 
 export const useClaimsSearch = () => {
   const [state, setState] = useState<ClaimsState>({
