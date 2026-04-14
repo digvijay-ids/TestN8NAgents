@@ -19,9 +19,10 @@ export interface ClaimsState {
   error: string | null;
   wipoClaims: WipoClaim[];
   usClaims: UsClaim[];
+  submitted: boolean;
 }
 
-const CLAIMS_API_BASE = 'https://noetherip-d-doc-filling.azurewebsites.net/api/DocProcessing/claims';
+const CLAIMS_API_BASE = '/api/DocProcessing/claims';
 const N8N_WEBHOOK_URL = 'https://n8n.noetherip.com/webhook/v1/wipo-claims?model=LocalLLM';
 
 export const useClaimsSearch = () => {
@@ -31,10 +32,11 @@ export const useClaimsSearch = () => {
     error: null,
     wipoClaims: [],
     usClaims: [],
+    submitted: false,
   });
 
-  const fetchClaims = useCallback(async (pctNumber: string) => {
-    setState({ isLoading: true, loadingStep: 'Fetching WIPO claims...', error: null, wipoClaims: [], usClaims: [] });
+  const fetchClaims = useCallback(async (pctNumber: string, email: string) => {
+    setState({ isLoading: true, loadingStep: 'Fetching WIPO claims...', error: null, wipoClaims: [], usClaims: [], submitted: false });
 
     try {
       // Step 1: Fetch WIPO claims
@@ -57,58 +59,39 @@ export const useClaimsSearch = () => {
       }
 
       const claimsData = await claimsRes.json();
-      const rawClaims: Array<{ claimId: string; plainText: string; sequence: number }> = claimsData.claims || [];
+     
+      const wipoClaims: WipoClaim[] = claimsData.claims || [];
 
-      // Group by claimId and concatenate plainText
-      const grouped = new Map<string, string>();
-      const sorted = [...rawClaims].sort((a, b) => a.sequence - b.sequence);
-      for (const c of sorted) {
-        grouped.set(c.claimId, (grouped.get(c.claimId) || '') + c.plainText.trim() + ' ');
-      }
+      setState(prev => ({ ...prev, loadingStep: 'Submitting claims for processing...' }));
 
-      const wipoClaims: WipoClaim[] = Array.from(grouped.entries()).map(([id, text]) => ({
-        claim_no: parseInt(id, 10),
-        text: text.trim(),
-      }));
-
-      setState(prev => ({ ...prev, loadingStep: 'Generating US compliant claims...' }));
-
-      // Step 2: POST to n8n webhook
-      const controller2 = new AbortController();
-      const timeout2 = setTimeout(() => controller2.abort(), 120000); // longer timeout for AI processing
-
-      const webhookRes = await fetch(N8N_WEBHOOK_URL, {
+      // Step 2: POST to n8n webhook — fire and forget
+      const webhookUrl = `${N8N_WEBHOOK_URL}&email=${encodeURIComponent(email)}`;
+      fetch(webhookUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ claims: wipoClaims }),
-        signal: controller2.signal,
+        body: JSON.stringify(wipoClaims),
+      }).catch((err) => {
+        console.warn('N8N webhook fire-and-forget error:', err);
       });
-      clearTimeout(timeout2);
-
-      if (!webhookRes.ok) {
-        throw new Error(`US Claims API error: ${webhookRes.status} - ${webhookRes.statusText}`);
-      }
-
-      const webhookData = await webhookRes.json();
-      const usClaims: UsClaim[] = webhookData.output_claims?.claims_json || [];
 
       setState({
         isLoading: false,
         loadingStep: null,
         error: null,
         wipoClaims,
-        usClaims,
+        usClaims: [],
+        submitted: true,
       });
     } catch (err) {
       const errorMessage = err instanceof Error
         ? err.name === 'AbortError' ? 'Request timed out. Please try again.' : err.message
         : 'An unexpected error occurred';
-      setState({ isLoading: false, loadingStep: null, error: errorMessage, wipoClaims: [], usClaims: [] });
+      setState({ isLoading: false, loadingStep: null, error: errorMessage, wipoClaims: [], usClaims: [], submitted: false });
     }
   }, []);
 
   const reset = useCallback(() => {
-    setState({ isLoading: false, loadingStep: null, error: null, wipoClaims: [], usClaims: [] });
+    setState({ isLoading: false, loadingStep: null, error: null, wipoClaims: [], usClaims: [], submitted: false });
   }, []);
 
   return { ...state, fetchClaims, reset };

@@ -1,15 +1,20 @@
 import { useState } from 'react';
-import { Search, Loader2, AlertCircle, Scale } from 'lucide-react';
+import { Search, Loader2, AlertCircle, Scale, CheckCircle2, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useClaimsSearch } from '@/hooks/useClaimsSearch';
-import { ClaimsComparison } from '@/components/ClaimsComparison';
+// ClaimsComparison kept for future use
+// import { ClaimsComparison } from '@/components/ClaimsComparison';
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const ClaimsPage = () => {
   const [pctNumber, setPctNumber] = useState('');
+  const [email, setEmail] = useState('');
   const [validationError, setValidationError] = useState<string | null>(null);
-  const { isLoading, loadingStep, error, wipoClaims, usClaims, fetchClaims, reset } = useClaimsSearch();
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const { isLoading, loadingStep, error, submitted, fetchClaims, reset } = useClaimsSearch();
 
   const validatePctFormat = (value: string): string | null => {
     const trimmed = value.trim().toUpperCase();
@@ -23,39 +28,66 @@ const ClaimsPage = () => {
   };
 
   const isValidPct = (v: string) => validatePctFormat(v) === null && v.trim() !== '';
+  const isValidEmail = (v: string) => EMAIL_REGEX.test(v.trim());
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePctChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setPctNumber(value);
     const err = validatePctFormat(value);
     if (value.trim() && err) setValidationError(err);
     else if (validationError) setValidationError(null);
-    if (wipoClaims.length > 0) reset();
+  };
+
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setEmail(value);
+    if (value.trim() && !isValidEmail(value)) setEmailError('Please enter a valid email address');
+    else if (emailError) setEmailError(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!pctNumber.trim()) { setValidationError('Please enter a PCT number'); return; }
     if (!isValidPct(pctNumber)) { setValidationError('Invalid PCT number format'); return; }
+    if (!email.trim()) { setEmailError('Email is required'); return; }
+    if (!isValidEmail(email)) { setEmailError('Please enter a valid email address'); return; }
     setValidationError(null);
-    await fetchClaims(pctNumber.trim());
+    setEmailError(null);
+    await fetchClaims(pctNumber.trim(), email.trim());
   };
 
-  const handleNewSearch = () => { setPctNumber(''); setValidationError(null); reset(); };
+  const handleNewSearch = () => { setPctNumber(''); setEmail(''); setValidationError(null); setEmailError(null); reset(); };
 
-  const showResults = wipoClaims.length > 0 && usClaims.length > 0;
+  const canSubmit = pctNumber.trim() !== '' && isValidPct(pctNumber) && email.trim() !== '' && isValidEmail(email) && !isLoading;
 
   return (
     <div className="p-4 md:p-6 space-y-6">
-      {!showResults ? (
-        <div className="flex items-center justify-center min-h-[calc(100vh-6rem)]">
+      <div className="flex items-center justify-center min-h-[calc(100vh-6rem)]">
+        {submitted ? (
+          <Card className="w-full max-w-md shadow-lg">
+            <CardHeader className="text-center">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
+                <CheckCircle2 className="h-6 w-6 text-green-600" />
+              </div>
+              <CardTitle className="text-2xl font-semibold">Request Submitted</CardTitle>
+              <CardDescription>
+                Your request has been submitted. US compliant claims will be sent to <span className="font-medium text-foreground">{email}</span>.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button className="w-full" onClick={handleNewSearch}>
+                Submit Another
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
           <Card className="w-full max-w-md shadow-lg">
             <CardHeader className="text-center">
               <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
                 <Scale className="h-6 w-6 text-primary" />
               </div>
               <CardTitle className="text-2xl font-semibold">US Compliant Claims</CardTitle>
-              <CardDescription>Enter a PCT number to generate US compliant claims</CardDescription>
+              <CardDescription>Enter a PCT number and your email to generate US compliant claims</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -65,9 +97,9 @@ const ClaimsPage = () => {
                     id="claimsPct"
                     placeholder="e.g., PCT/US2024/001234"
                     value={pctNumber}
-                    onChange={handleInputChange}
+                    onChange={handlePctChange}
                     disabled={isLoading}
-                    className={validationError || error ? 'border-destructive focus-visible:ring-destructive' : ''}
+                    className={validationError ? 'border-destructive focus-visible:ring-destructive' : ''}
                   />
                   {validationError && (
                     <div className="flex items-center gap-2 text-sm text-destructive">
@@ -76,7 +108,30 @@ const ClaimsPage = () => {
                     </div>
                   )}
                 </div>
-                <Button type="submit" className="w-full" disabled={!pctNumber.trim() || !isValidPct(pctNumber) || isLoading}>
+                <div className="space-y-2">
+                  <label htmlFor="claimsEmail" className="text-sm font-medium text-foreground">
+                    Email <span className="text-destructive">*</span>
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="claimsEmail"
+                      type="email"
+                      placeholder="e.g., user@example.com"
+                      value={email}
+                      onChange={handleEmailChange}
+                      disabled={isLoading}
+                      className={`pl-9 ${emailError ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                    />
+                  </div>
+                  {emailError && (
+                    <div className="flex items-center gap-2 text-sm text-destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <span>{emailError}</span>
+                    </div>
+                  )}
+                </div>
+                <Button type="submit" className="w-full" disabled={!canSubmit}>
                   {isLoading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -100,16 +155,8 @@ const ClaimsPage = () => {
               )}
             </CardContent>
           </Card>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">PCT: <span className="font-medium text-foreground">{pctNumber}</span></p>
-            <Button variant="outline" size="sm" onClick={handleNewSearch}>New Search</Button>
-          </div>
-          <ClaimsComparison wipoClaims={wipoClaims} initialUsClaims={usClaims} />
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };
