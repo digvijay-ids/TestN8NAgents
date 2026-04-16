@@ -1,20 +1,25 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Loader2, AlertCircle, Scale, CheckCircle2, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useClaimsSearch } from '@/hooks/useClaimsSearch';
-// ClaimsComparison kept for future use
-// import { ClaimsComparison } from '@/components/ClaimsComparison';
+import { useAppState } from '@/context/AppStateContext';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const ClaimsPage = () => {
-  const [pctNumber, setPctNumber] = useState('');
-  const [email, setEmail] = useState('');
+  const { claims, setClaimsFormValues, fetchClaims, resetClaims } = useAppState();
+
+  // Initialise local form fields from persisted context so they survive navigation
+  const [pctNumber, setPctNumber] = useState(claims.pctNumber);
+  const [email, setEmail] = useState(claims.email);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [emailError, setEmailError] = useState<string | null>(null);
-  const { isLoading, loadingStep, error, submitted, fetchClaims, reset } = useClaimsSearch();
+
+  // Keep context form values in sync (so they survive the next unmount)
+  useEffect(() => {
+    setClaimsFormValues(pctNumber, email);
+  }, [pctNumber, email, setClaimsFormValues]);
 
   const validatePctFormat = (value: string): string | null => {
     const trimmed = value.trim().toUpperCase();
@@ -56,8 +61,15 @@ const ClaimsPage = () => {
     await fetchClaims(pctNumber.trim(), email.trim());
   };
 
-  const handleNewSearch = () => { setPctNumber(''); setEmail(''); setValidationError(null); setEmailError(null); reset(); };
+  const handleNewSearch = () => {
+    setPctNumber('');
+    setEmail('');
+    setValidationError(null);
+    setEmailError(null);
+    resetClaims();
+  };
 
+  const { isLoading, loadingStep, error, submitted } = claims;
   const canSubmit = pctNumber.trim() !== '' && isValidPct(pctNumber) && email.trim() !== '' && isValidEmail(email) && !isLoading;
 
   return (
@@ -71,7 +83,8 @@ const ClaimsPage = () => {
               </div>
               <CardTitle className="text-2xl font-semibold">Request Submitted</CardTitle>
               <CardDescription>
-                Your request has been submitted. US compliant claims will be sent to <span className="font-medium text-foreground">{email}</span>.
+                Your request has been submitted. US compliant claims will be sent to{' '}
+                <span className="font-medium text-foreground">{claims.email}</span>.
               </CardDescription>
             </CardHeader>
             <CardContent>

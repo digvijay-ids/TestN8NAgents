@@ -7,6 +7,7 @@ import { Layout } from "./components/Layout";
 import Index from "./pages/Index";
 import ClaimsPage from "./pages/ClaimsPage";
 import NotFound from "./pages/NotFound";
+import { AppStateProvider } from "./context/AppStateContext";
 
 const queryClient = new QueryClient();
 
@@ -15,16 +16,18 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter basename={import.meta.env.BASE_URL}>
-        <Routes>
-          <Route element={<Layout />}>
-            <Route path="/" element={<Navigate to="/create-documents" replace />} />
-            <Route path="/create-documents" element={<Index />} />
-            <Route path="/us-compliant-claims" element={<ClaimsPage />} />
-          </Route>
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <AppStateProvider>
+        <BrowserRouter basename={import.meta.env.BASE_URL}>
+          <Routes>
+            <Route element={<Layout />}>
+              <Route path="/" element={<Navigate to="/create-documents" replace />} />
+              <Route path="/create-documents" element={<Index />} />
+              <Route path="/us-compliant-claims" element={<ClaimsPage />} />
+            </Route>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </AppStateProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
