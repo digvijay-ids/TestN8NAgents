@@ -50,7 +50,7 @@ const defaultClaimsState: ClaimsState = {
 };
 
 const CLAIMS_API_BASE = 'https://noetherip-d-doc-filling.azurewebsites.net/api/DocProcessing/claims';
-const N8N_WEBHOOK_URL = 'https://n8n.noetherip.com/webhook/v1/wipo-claims?model=LocalLLM';
+const N8N_WEBHOOK_URL = 'https://docfilling-api.noetherip.com/api/claims?';
 
 // ─── Context shape ────────────────────────────────────────────────────────────
 
@@ -202,12 +202,15 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       const wipoClaims: WipoClaim[] = claimsData.claims || [];
 
       setClaims(prev => ({ ...prev, loadingStep: 'Submitting claims for processing...' }));
-
-      const webhookUrl = `${N8N_WEBHOOK_URL}&email=${encodeURIComponent(email)}`;
+      const payload = {
+        cleanPctNumber: pctNumber.replace(/\//g, '_'),
+        claims: wipoClaims,
+      }
+      const webhookUrl = `${N8N_WEBHOOK_URL}email=${encodeURIComponent(email)}`;
       fetch(webhookUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(wipoClaims),
+        body: JSON.stringify(payload),
       }).catch((err) => {
         console.warn('N8N webhook fire-and-forget error:', err);
       });
