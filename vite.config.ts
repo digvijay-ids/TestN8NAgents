@@ -5,13 +5,13 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  base: '/',
+  base: '/doc-filling/',
   server: {
     host: "::",
     port: 8080,
     proxy: {
       '/api/DocProcessing': {
-        target: 'https://noetherip-d-doc-filling.azurewebsites.net',
+        target: 'https://localhost:7196',
         changeOrigin: true,
         secure: true,
       },

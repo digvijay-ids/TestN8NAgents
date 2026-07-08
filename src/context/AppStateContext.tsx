@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import { GENERATE_DOC_URL, API_HEADERS, REQUEST_TIMEOUT } from '@/config/api';
+import { GENERATE_DOC_URL, API_HEADERS, REQUEST_TIMEOUT, CLAIMS_API_BASE, AUTH_HEADER } from '@/config/api';
 import { DocType } from '@/types/docTypes';
+import { Attorney } from '@/types/attorney';
 
 // ─── Documents page state ────────────────────────────────────────────────────
 
@@ -11,6 +12,7 @@ export interface DocumentsState {
   fileName: string | null;
   pctNumber: string;
   docTypes: DocType[];
+  docketNumber: string;
 }
 
 const defaultDocumentsState: DocumentsState = {
@@ -20,6 +22,7 @@ const defaultDocumentsState: DocumentsState = {
   fileName: null,
   pctNumber: '',
   docTypes: [],
+  docketNumber: '',
 };
 
 // ─── Claims page state ───────────────────────────────────────────────────────
@@ -49,15 +52,16 @@ const defaultClaimsState: ClaimsState = {
   email: '',
 };
 
-const CLAIMS_API_BASE = 'https://noetherip-d-doc-filling.azurewebsites.net/api/DocProcessing/claims';
-const N8N_WEBHOOK_URL = 'https://docfilling-api.noetherip.com/api/claims?';
+const N8N_WEBHOOK_URL =
+  import.meta.env.VITE_CLAIMS_WEBHOOK_URL ??
+  'https://docfilling-api.noetherip.com/api/claims?';
 
 // ─── Context shape ────────────────────────────────────────────────────────────
 
 interface AppStateContextValue {
   documents: DocumentsState;
-  setDocumentsFormValues: (pctNumber: string, docTypes: DocType[]) => void;
-  searchFile: (pctNumber: string, docTypes: DocType[]) => Promise<void>;
+  setDocumentsFormValues: (pctNumber: string, docTypes: DocType[], docketNumber: string) => void;
+  searchFile: (pctNumber: string, docTypes: DocType[], attorney?: Attorney | null, docketNumber?: string) => Promise<void>;
   downloadFile: () => void;
   resetDocuments: () => void;
 
@@ -76,11 +80,11 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   const [claims, setClaims] = useState<ClaimsState>(defaultClaimsState);
 
   // Documents helpers
-  const setDocumentsFormValues = useCallback((pctNumber: string, docTypes: DocType[]) => {
-    setDocuments(prev => ({ ...prev, pctNumber, docTypes }));
+  const setDocumentsFormValues = useCallback((pctNumber: string, docTypes: DocType[], docketNumber: string) => {
+    setDocuments(prev => ({ ...prev, pctNumber, docTypes, docketNumber }));
   }, []);
 
-  const searchFile = useCallback(async (pctNumber: string, docTypes: DocType[]) => {
+  const searchFile = useCallback(async (pctNumber: string, docTypes: DocType[], attorney?: Attorney | null, docketNumber?: string) => {
     setDocuments({
       isLoading: true,
       error: null,
@@ -88,6 +92,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       fileName: null,
       pctNumber,
       docTypes,
+      docketNumber: docketNumber ?? '',
     });
 
     try {
@@ -97,7 +102,20 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       const response = await fetch(GENERATE_DOC_URL, {
         method: 'POST',
         headers: API_HEADERS,
-        body: JSON.stringify({ pctNumber, docTypes: docTypes.map(String) }),
+        body: JSON.stringify({
+            pctNumber,
+            docTypes: docTypes.map(String),
+            ...(docketNumber?.trim() && { docketNumber: docketNumber.trim() }),
+            ...(attorney && {
+              attorney: {
+                FirstName: attorney.firstName ?? null,
+                MiddleName: attorney.middleName ?? null,
+                LastName: attorney.lastName ?? null,
+                PhoneNumber: attorney.phone ?? null,
+                RegistrationNumber: attorney.regNumber,
+              },
+            }),
+          }),
         signal: controller.signal,
       });
 
@@ -183,7 +201,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       const encodedPct = encodeURIComponent(pctNumber.trim());
       const claimsRes = await fetch(`${CLAIMS_API_BASE}?pctNumber=${encodedPct}`, {
         method: 'GET',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', ...AUTH_HEADER },
         signal: controller.signal,
       });
       clearTimeout(timeoutId);

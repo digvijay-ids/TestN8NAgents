@@ -7,6 +7,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { useAppState } from '@/context/AppStateContext';
 import { DocType, DOC_TYPE_OPTIONS } from '@/types/docTypes';
+import { AttorneySelect } from '@/components/AttorneySelect';
+import { loadAttorney } from '@/lib/attorneyStorage';
 
 export const SearchForm = () => {
   const { documents, setDocumentsFormValues, searchFile, downloadFile, resetDocuments } = useAppState();
@@ -14,12 +16,13 @@ export const SearchForm = () => {
   // Initialise local form fields from persisted context so they survive navigation
   const [pctNumber, setPctNumber] = useState(documents.pctNumber);
   const [selectedDocTypes, setSelectedDocTypes] = useState<DocType[]>(documents.docTypes);
+  const [docketNumber, setDocketNumber] = useState(documents.docketNumber);
   const [validationError, setValidationError] = useState<string | null>(null);
 
   // Keep context form values in sync (so they survive the next unmount)
   useEffect(() => {
-    setDocumentsFormValues(pctNumber, selectedDocTypes);
-  }, [pctNumber, selectedDocTypes, setDocumentsFormValues]);
+    setDocumentsFormValues(pctNumber, selectedDocTypes, docketNumber);
+  }, [pctNumber, selectedDocTypes, docketNumber, setDocumentsFormValues]);
 
   const validatePctFormat = (value: string): string | null => {
     const trimmed = value.trim().toUpperCase();
@@ -62,7 +65,7 @@ export const SearchForm = () => {
     e.preventDefault();
     if (!validateInput(pctNumber)) return;
     if (selectedDocTypes.length === 0) { setValidationError('Please select at least one document type'); return; }
-    await searchFile(pctNumber.trim(), selectedDocTypes);
+    await searchFile(pctNumber.trim(), selectedDocTypes, loadAttorney(), docketNumber.trim());
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -77,6 +80,7 @@ export const SearchForm = () => {
   const handleNewSearch = () => {
     setPctNumber('');
     setSelectedDocTypes([]);
+    setDocketNumber('');
     setValidationError(null);
     resetDocuments();
   };
@@ -115,6 +119,27 @@ export const SearchForm = () => {
                 <span>{validationError}</span>
               </div>
             )}
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-foreground">
+              Attorney <span className="font-normal text-muted-foreground">(optional)</span>
+            </Label>
+            <AttorneySelect />
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="docketNumber" className="text-sm font-medium text-foreground">
+              Docket Number <span className="font-normal text-muted-foreground">(optional)</span>
+            </label>
+            <Input
+              id="docketNumber"
+              type="text"
+              placeholder="e.g., ABC-1234"
+              value={docketNumber}
+              onChange={(e) => setDocketNumber(e.target.value)}
+              disabled={isLoading}
+            />
           </div>
 
           <div className="space-y-3">

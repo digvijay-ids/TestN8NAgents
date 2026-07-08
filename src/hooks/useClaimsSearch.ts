@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { REQUEST_TIMEOUT } from '@/config/api';
+import { REQUEST_TIMEOUT, CLAIMS_API_BASE, AUTH_HEADER } from '@/config/api';
 
 interface WipoClaim {
   claim_no: number;
@@ -22,8 +22,9 @@ export interface ClaimsState {
   submitted: boolean;
 }
 
-const CLAIMS_API_BASE = 'https://noetherip-d-doc-filling.azurewebsites.net/api/DocProcessing/claims';
-const N8N_WEBHOOK_URL = 'https://n8n.noetherip.com/webhook/v1/wipo-claims?model=LocalLLM';
+const N8N_WEBHOOK_URL =
+  import.meta.env.VITE_N8N_WEBHOOK_URL ??
+  'https://n8n.noetherip.com/webhook/v1/wipo-claims?model=LocalLLM';
 
 export const useClaimsSearch = () => {
   const [state, setState] = useState<ClaimsState>({
@@ -46,7 +47,7 @@ export const useClaimsSearch = () => {
       const encodedPct = encodeURIComponent(pctNumber.trim());
       const claimsRes = await fetch(`${CLAIMS_API_BASE}?pctNumber=${encodedPct}`, {
         method: 'GET',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', ...AUTH_HEADER },
         signal: controller1.signal,
       });
       clearTimeout(timeout1);
