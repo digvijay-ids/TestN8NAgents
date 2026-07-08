@@ -32,6 +32,16 @@ jobs:
 
       - name: Build
         run: npm run build
+        env:
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
+          VITE_API_BASIC_AUTH_USER: ${{ secrets.VITE_API_BASIC_AUTH_USER }}
+          VITE_API_BASIC_AUTH_PASS: ${{ secrets.VITE_API_BASIC_AUTH_PASS }}
+          VITE_ATTORNEY_SEARCH_URL: ${{ secrets.VITE_ATTORNEY_SEARCH_URL }}
+          VITE_USE_MOCK_ATTORNEY_API: ${{ secrets.VITE_USE_MOCK_ATTORNEY_API }}
+          VITE_CLAIMS_WEBHOOK_URL: ${{ secrets.VITE_CLAIMS_WEBHOOK_URL }}
+          VITE_N8N_WEBHOOK_URL: ${{ secrets.VITE_N8N_WEBHOOK_URL }}
+          VITE_REQUEST_TIMEOUT: ${{ secrets.VITE_REQUEST_TIMEOUT }}
+          VITE_ATTORNEY_REQUEST_TIMEOUT: ${{ secrets.VITE_ATTORNEY_REQUEST_TIMEOUT }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
