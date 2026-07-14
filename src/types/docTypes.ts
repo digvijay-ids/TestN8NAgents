@@ -30,7 +30,7 @@ export const DOC_TYPE_OPTIONS = [
   { value: DocType.Inventor, label: 'Inventor' },
   { value: DocType.MicroEntity, label: 'Micro Entity' },
   { value: DocType.IDS, label: 'Information Disclosure Statement (IDS)' },
-  { value: DocType.IDSLatestVersion, label: 'Document IDS Latest Version' },
+  { value: DocType.IDSLatestVersion, label: 'IDS (Seperate forms)' },
   { value: DocType.CombinedDeclarationAndAssignment, label: 'Combined Declaration and Assignment' },
   { value: DocType.All, label: 'All Documents' },
 ] as const;
