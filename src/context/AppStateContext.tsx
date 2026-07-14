@@ -13,6 +13,7 @@ export interface DocumentsState {
   pctNumber: string;
   docTypes: DocType[];
   docketNumber: string;
+  customerNumber: string;
 }
 
 const defaultDocumentsState: DocumentsState = {
@@ -23,13 +24,21 @@ const defaultDocumentsState: DocumentsState = {
   pctNumber: '',
   docTypes: [],
   docketNumber: '',
+  customerNumber: '',
 };
 
 // ─── Claims page state ───────────────────────────────────────────────────────
 
 interface WipoClaim {
-  claim_no: number;
-  text: string;
+  claimId: string;
+  claimReferences: string[];
+  dataFormat: string;
+  isDependent: boolean;
+  lang: string;
+  loadSource: string;
+  plainText: string;
+  sequence: number;
+  wordCount: number;
 }
 
 export interface ClaimsState {
@@ -40,6 +49,12 @@ export interface ClaimsState {
   submitted: boolean;
   pctNumber: string;
   email: string;
+  docketNumber: string;
+  cleanPctNumber: string | null;
+  applicationNumber: string | null;
+  title: string | null;
+  applicantName: string | null;
+  inventorsName: string[];
 }
 
 const defaultClaimsState: ClaimsState = {
@@ -50,6 +65,12 @@ const defaultClaimsState: ClaimsState = {
   submitted: false,
   pctNumber: '',
   email: '',
+  docketNumber: '',
+  cleanPctNumber: null,
+  applicationNumber: null,
+  title: null,
+  applicantName: null,
+  inventorsName: [],
 };
 
 const N8N_WEBHOOK_URL =
@@ -60,14 +81,14 @@ const N8N_WEBHOOK_URL =
 
 interface AppStateContextValue {
   documents: DocumentsState;
-  setDocumentsFormValues: (pctNumber: string, docTypes: DocType[], docketNumber: string) => void;
-  searchFile: (pctNumber: string, docTypes: DocType[], attorney?: Attorney | null, docketNumber?: string) => Promise<void>;
+  setDocumentsFormValues: (pctNumber: string, docTypes: DocType[], docketNumber: string, customerNumber: string) => void;
+  searchFile: (pctNumber: string, docTypes: DocType[], attorney?: Attorney | null, docketNumber?: string, customerNumber?: string) => Promise<void>;
   downloadFile: () => void;
   resetDocuments: () => void;
 
   claims: ClaimsState;
-  setClaimsFormValues: (pctNumber: string, email: string) => void;
-  fetchClaims: (pctNumber: string, email: string) => Promise<void>;
+  setClaimsFormValues: (pctNumber: string, email: string, docketNumber: string) => void;
+  fetchClaims: (pctNumber: string, email: string, attorney?: Attorney | null, docketNumber?: string) => Promise<void>;
   resetClaims: () => void;
 }
 
@@ -80,11 +101,11 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   const [claims, setClaims] = useState<ClaimsState>(defaultClaimsState);
 
   // Documents helpers
-  const setDocumentsFormValues = useCallback((pctNumber: string, docTypes: DocType[], docketNumber: string) => {
-    setDocuments(prev => ({ ...prev, pctNumber, docTypes, docketNumber }));
+  const setDocumentsFormValues = useCallback((pctNumber: string, docTypes: DocType[], docketNumber: string, customerNumber: string) => {
+    setDocuments(prev => ({ ...prev, pctNumber, docTypes, docketNumber, customerNumber }));
   }, []);
 
-  const searchFile = useCallback(async (pctNumber: string, docTypes: DocType[], attorney?: Attorney | null, docketNumber?: string) => {
+  const searchFile = useCallback(async (pctNumber: string, docTypes: DocType[], attorney?: Attorney | null, docketNumber?: string, customerNumber?: string) => {
     setDocuments({
       isLoading: true,
       error: null,
@@ -93,6 +114,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       pctNumber,
       docTypes,
       docketNumber: docketNumber ?? '',
+      customerNumber: customerNumber ?? '',
     });
 
     try {
@@ -106,6 +128,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
             pctNumber,
             docTypes: docTypes.map(String),
             ...(docketNumber?.trim() && { docketNumber: docketNumber.trim() }),
+            ...(customerNumber?.trim() && { customerNumber: customerNumber.trim() }),
             ...(attorney && {
               attorney: {
                 FirstName: attorney.firstName ?? null,
@@ -179,11 +202,11 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   // Claims helpers
-  const setClaimsFormValues = useCallback((pctNumber: string, email: string) => {
-    setClaims(prev => ({ ...prev, pctNumber, email }));
+  const setClaimsFormValues = useCallback((pctNumber: string, email: string, docketNumber: string) => {
+    setClaims(prev => ({ ...prev, pctNumber, email, docketNumber }));
   }, []);
 
-  const fetchClaims = useCallback(async (pctNumber: string, email: string) => {
+  const fetchClaims = useCallback(async (pctNumber: string, email: string, attorney?: Attorney | null, docketNumber?: string) => {
     setClaims({
       isLoading: true,
       loadingStep: 'Fetching WIPO claims...',
@@ -218,17 +241,27 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
 
       const claimsData = await claimsRes.json();
       const wipoClaims: WipoClaim[] = claimsData.claims || [];
+      const cleanPctNumber: string | null = claimsData.cleanPctNumber ?? null;
+      const applicationNumber: string | null = claimsData.applicationNumber ?? null;
+      const title: string | null = claimsData.title ?? null;
+      const applicantName: string | null = claimsData.applicantName ?? null;
+      const inventorsName: string[] = claimsData.inventorsName ?? [];
 
       setClaims(prev => ({ ...prev, loadingStep: 'Submitting claims for processing...' }));
-      const payload = {
-        cleanPctNumber: pctNumber.replace(/\//g, '_'),
-        claims: wipoClaims,
-      }
       const webhookUrl = `${N8N_WEBHOOK_URL}email=${encodeURIComponent(email)}`;
       fetch(webhookUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+            ...claimsData,
+            email,
+            ...(docketNumber && { docketNumber }),
+            ...(attorney && {
+              attorneyName: attorney.name,
+              registrationNo: attorney.regNumber,
+              telNo: attorney.phone ?? '',
+            }),
+          }),
       }).catch((err) => {
         console.warn('N8N webhook fire-and-forget error:', err);
       });
@@ -240,6 +273,11 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
         error: null,
         wipoClaims,
         submitted: true,
+        cleanPctNumber,
+        applicationNumber,
+        title,
+        applicantName,
+        inventorsName,
       }));
     } catch (err) {
       const errorMessage =

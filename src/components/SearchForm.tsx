@@ -17,12 +17,13 @@ export const SearchForm = () => {
   const [pctNumber, setPctNumber] = useState(documents.pctNumber);
   const [selectedDocTypes, setSelectedDocTypes] = useState<DocType[]>(documents.docTypes);
   const [docketNumber, setDocketNumber] = useState(documents.docketNumber);
+  const [customerNumber, setCustomerNumber] = useState(documents.customerNumber);
   const [validationError, setValidationError] = useState<string | null>(null);
 
   // Keep context form values in sync (so they survive the next unmount)
   useEffect(() => {
-    setDocumentsFormValues(pctNumber, selectedDocTypes, docketNumber);
-  }, [pctNumber, selectedDocTypes, docketNumber, setDocumentsFormValues]);
+    setDocumentsFormValues(pctNumber, selectedDocTypes, docketNumber, customerNumber);
+  }, [pctNumber, selectedDocTypes, docketNumber, customerNumber, setDocumentsFormValues]);
 
   const validatePctFormat = (value: string): string | null => {
     const trimmed = value.trim().toUpperCase();
@@ -65,7 +66,7 @@ export const SearchForm = () => {
     e.preventDefault();
     if (!validateInput(pctNumber)) return;
     if (selectedDocTypes.length === 0) { setValidationError('Please select at least one document type'); return; }
-    await searchFile(pctNumber.trim(), selectedDocTypes, loadAttorney(), docketNumber.trim());
+    await searchFile(pctNumber.trim(), selectedDocTypes, loadAttorney(), docketNumber.trim(), customerNumber.trim());
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -81,6 +82,7 @@ export const SearchForm = () => {
     setPctNumber('');
     setSelectedDocTypes([]);
     setDocketNumber('');
+    setCustomerNumber('');
     setValidationError(null);
     resetDocuments();
   };
@@ -138,6 +140,20 @@ export const SearchForm = () => {
               placeholder="e.g., ABC-1234"
               value={docketNumber}
               onChange={(e) => setDocketNumber(e.target.value)}
+              disabled={isLoading}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="customerNumber" className="text-sm font-medium text-foreground">
+              Customer Number <span className="font-normal text-muted-foreground">(optional)</span>
+            </label>
+            <Input
+              id="customerNumber"
+              type="text"
+              placeholder="e.g., 12345"
+              value={customerNumber}
+              onChange={(e) => setCustomerNumber(e.target.value)}
               disabled={isLoading}
             />
           </div>

@@ -15,6 +15,10 @@ export enum DocType {
   IDS = 4,
   /** All document types */
   All = 5,
+  /** IDS Latest Version document */
+  IDSLatestVersion = 6,
+  /** IDS Latest Version document */
+  CombinedDeclarationAndAssignment = 7,
 }
 
 /**
@@ -26,5 +30,7 @@ export const DOC_TYPE_OPTIONS = [
   { value: DocType.Inventor, label: 'Inventor' },
   { value: DocType.MicroEntity, label: 'Micro Entity' },
   { value: DocType.IDS, label: 'Information Disclosure Statement (IDS)' },
+  { value: DocType.IDSLatestVersion, label: 'Document IDS Latest Version' },
+  { value: DocType.CombinedDeclarationAndAssignment, label: 'Combined Declaration and Assignment' },
   { value: DocType.All, label: 'All Documents' },
 ] as const;

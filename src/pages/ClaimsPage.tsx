@@ -3,7 +3,10 @@ import { Search, Loader2, AlertCircle, Scale, CheckCircle2, Mail } from 'lucide-
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
 import { useAppState } from '@/context/AppStateContext';
+import { AttorneySelect } from '@/components/AttorneySelect';
+import { loadAttorney } from '@/lib/attorneyStorage';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -13,13 +16,14 @@ const ClaimsPage = () => {
   // Initialise local form fields from persisted context so they survive navigation
   const [pctNumber, setPctNumber] = useState(claims.pctNumber);
   const [email, setEmail] = useState(claims.email);
+  const [docketNumber, setDocketNumber] = useState(claims.docketNumber);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [emailError, setEmailError] = useState<string | null>(null);
 
   // Keep context form values in sync (so they survive the next unmount)
   useEffect(() => {
-    setClaimsFormValues(pctNumber, email);
-  }, [pctNumber, email, setClaimsFormValues]);
+    setClaimsFormValues(pctNumber, email, docketNumber);
+  }, [pctNumber, email, docketNumber, setClaimsFormValues]);
 
   const validatePctFormat = (value: string): string | null => {
     const trimmed = value.trim().toUpperCase();
@@ -58,12 +62,13 @@ const ClaimsPage = () => {
     if (!isValidEmail(email)) { setEmailError('Please enter a valid email address'); return; }
     setValidationError(null);
     setEmailError(null);
-    await fetchClaims(pctNumber.trim(), email.trim());
+    await fetchClaims(pctNumber.trim(), email.trim(), loadAttorney(), docketNumber.trim());
   };
 
   const handleNewSearch = () => {
     setPctNumber('');
     setEmail('');
+    setDocketNumber('');
     setValidationError(null);
     setEmailError(null);
     resetClaims();
@@ -144,6 +149,27 @@ const ClaimsPage = () => {
                     </div>
                   )}
                 </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-foreground">
+                    Attorney <span className="font-normal text-muted-foreground">(optional)</span>
+                  </Label>
+                  <AttorneySelect />
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="claimsDocket" className="text-sm font-medium text-foreground">
+                    Docket Number <span className="font-normal text-muted-foreground">(optional)</span>
+                  </label>
+                  <Input
+                    id="claimsDocket"
+                    type="text"
+                    placeholder="e.g., ABC-1234"
+                    value={docketNumber}
+                    onChange={(e) => setDocketNumber(e.target.value)}
+                    disabled={isLoading}
+                  />
+                </div>
+
                 <Button type="submit" className="w-full" disabled={!canSubmit}>
                   {isLoading ? (
                     <>
