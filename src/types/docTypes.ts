@@ -19,6 +19,8 @@ export enum DocType {
   IDSLatestVersion = 6,
   /** IDS Latest Version document */
   CombinedDeclarationAndAssignment = 7,
+  /** US Compliant Claims document */
+  USClaims = 8,
 }
 
 /**
@@ -32,5 +34,6 @@ export const DOC_TYPE_OPTIONS = [
   { value: DocType.IDS, label: 'Information Disclosure Statement (IDS)' },
   { value: DocType.IDSLatestVersion, label: 'IDS (Seperate forms)' },
   { value: DocType.CombinedDeclarationAndAssignment, label: 'Combined Declaration and Assignment' },
+  { value: DocType.USClaims, label: 'US Compliant Claims' },
   { value: DocType.All, label: 'All Documents' },
 ] as const;
