@@ -21,6 +21,8 @@ export enum DocType {
   CombinedDeclarationAndAssignment = 7,
   /** US Compliant Claims document */
   USClaims = 8,
+  /** IDS Transmittal Form */
+  TransmittalForm = 9,
 }
 
 /**
@@ -35,5 +37,6 @@ export const DOC_TYPE_OPTIONS = [
   { value: DocType.IDSLatestVersion, label: 'IDS (Seperate forms)' },
   { value: DocType.CombinedDeclarationAndAssignment, label: 'Combined Declaration and Assignment' },
   { value: DocType.USClaims, label: 'US Compliant Claims' },
+  { value: DocType.TransmittalForm, label: 'IDS Transmittal Form' },
   { value: DocType.All, label: 'All Documents' },
 ] as const;
