@@ -22,7 +22,9 @@ export enum DocType {
   /** US Compliant Claims document */
   USClaims = 8,
   /** IDS Transmittal Form */
-  TransmittalForm = 9,
+  IdsTransmittal = 9,
+  /** PCT Transmittal Form (PTO-1390) */
+  PctTransmittal = 10,
 }
 
 /**
@@ -37,6 +39,7 @@ export const DOC_TYPE_OPTIONS = [
   { value: DocType.IDSLatestVersion, label: 'IDS (Seperate forms)' },
   { value: DocType.CombinedDeclarationAndAssignment, label: 'Combined Declaration and Assignment' },
   { value: DocType.USClaims, label: 'US Compliant Claims' },
-  { value: DocType.TransmittalForm, label: 'IDS Transmittal Form' },
+  { value: DocType.IdsTransmittal, label: 'IDS Transmittal' },
+  { value: DocType.PctTransmittal, label: 'PCT Transmittal' },
   { value: DocType.All, label: 'All Documents' },
 ] as const;

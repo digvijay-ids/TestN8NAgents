@@ -18,12 +18,16 @@ export const SearchForm = () => {
   const [selectedDocTypes, setSelectedDocTypes] = useState<DocType[]>(documents.docTypes);
   const [docketNumber, setDocketNumber] = useState(documents.docketNumber);
   const [customerNumber, setCustomerNumber] = useState(documents.customerNumber);
+  const [numberOfSheets, setNumberOfSheets] = useState(documents.numberOfSheets);
   const [validationError, setValidationError] = useState<string | null>(null);
+
+  // The sheet count only applies to the PCT Transmittal (PTO-1390) form.
+  const showSheetsInput = selectedDocTypes.includes(DocType.PctTransmittal) || selectedDocTypes.includes(DocType.All);
 
   // Keep context form values in sync (so they survive the next unmount)
   useEffect(() => {
-    setDocumentsFormValues(pctNumber, selectedDocTypes, docketNumber, customerNumber);
-  }, [pctNumber, selectedDocTypes, docketNumber, customerNumber, setDocumentsFormValues]);
+    setDocumentsFormValues(pctNumber, selectedDocTypes, docketNumber, customerNumber, numberOfSheets);
+  }, [pctNumber, selectedDocTypes, docketNumber, customerNumber, numberOfSheets, setDocumentsFormValues]);
 
   const validatePctFormat = (value: string): string | null => {
     const trimmed = value.trim().toUpperCase();
@@ -66,7 +70,7 @@ export const SearchForm = () => {
     e.preventDefault();
     if (!validateInput(pctNumber)) return;
     if (selectedDocTypes.length === 0) { setValidationError('Please select at least one document type'); return; }
-    await searchFile(pctNumber.trim(), selectedDocTypes, loadAttorney(), docketNumber.trim(), customerNumber.trim());
+    await searchFile(pctNumber.trim(), selectedDocTypes, loadAttorney(), docketNumber.trim(), customerNumber.trim(), numberOfSheets.trim());
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -83,6 +87,7 @@ export const SearchForm = () => {
     setSelectedDocTypes([]);
     setDocketNumber('');
     setCustomerNumber('');
+    setNumberOfSheets('');
     setValidationError(null);
     resetDocuments();
   };
@@ -157,6 +162,23 @@ export const SearchForm = () => {
               disabled={isLoading}
             />
           </div>
+
+          {showSheetsInput && (
+            <div className="space-y-2">
+              <label htmlFor="numberOfSheets" className="text-sm font-medium text-foreground">
+                Number of Sheets <span className="font-normal text-muted-foreground">(incl. drawings, for PCT Transmittal)</span>
+              </label>
+              <Input
+                id="numberOfSheets"
+                type="number"
+                min={1}
+                placeholder="e.g., 120"
+                value={numberOfSheets}
+                onChange={(e) => setNumberOfSheets(e.target.value)}
+                disabled={isLoading}
+              />
+            </div>
+          )}
 
           <div className="space-y-3">
             <Label className="text-sm font-medium text-foreground">Document Type</Label>

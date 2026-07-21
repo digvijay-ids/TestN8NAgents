@@ -14,6 +14,7 @@ export interface DocumentsState {
   docTypes: DocType[];
   docketNumber: string;
   customerNumber: string;
+  numberOfSheets: string;
 }
 
 const defaultDocumentsState: DocumentsState = {
@@ -25,6 +26,7 @@ const defaultDocumentsState: DocumentsState = {
   docTypes: [],
   docketNumber: '',
   customerNumber: '',
+  numberOfSheets: '',
 };
 
 // ─── Claims page state ───────────────────────────────────────────────────────
@@ -81,8 +83,8 @@ const N8N_WEBHOOK_URL =
 
 interface AppStateContextValue {
   documents: DocumentsState;
-  setDocumentsFormValues: (pctNumber: string, docTypes: DocType[], docketNumber: string, customerNumber: string) => void;
-  searchFile: (pctNumber: string, docTypes: DocType[], attorney?: Attorney | null, docketNumber?: string, customerNumber?: string) => Promise<void>;
+  setDocumentsFormValues: (pctNumber: string, docTypes: DocType[], docketNumber: string, customerNumber: string, numberOfSheets: string) => void;
+  searchFile: (pctNumber: string, docTypes: DocType[], attorney?: Attorney | null, docketNumber?: string, customerNumber?: string, numberOfSheets?: string) => Promise<void>;
   downloadFile: () => void;
   resetDocuments: () => void;
 
@@ -101,11 +103,11 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   const [claims, setClaims] = useState<ClaimsState>(defaultClaimsState);
 
   // Documents helpers
-  const setDocumentsFormValues = useCallback((pctNumber: string, docTypes: DocType[], docketNumber: string, customerNumber: string) => {
-    setDocuments(prev => ({ ...prev, pctNumber, docTypes, docketNumber, customerNumber }));
+  const setDocumentsFormValues = useCallback((pctNumber: string, docTypes: DocType[], docketNumber: string, customerNumber: string, numberOfSheets: string) => {
+    setDocuments(prev => ({ ...prev, pctNumber, docTypes, docketNumber, customerNumber, numberOfSheets }));
   }, []);
 
-  const searchFile = useCallback(async (pctNumber: string, docTypes: DocType[], attorney?: Attorney | null, docketNumber?: string, customerNumber?: string) => {
+  const searchFile = useCallback(async (pctNumber: string, docTypes: DocType[], attorney?: Attorney | null, docketNumber?: string, customerNumber?: string, numberOfSheets?: string) => {
     setDocuments({
       isLoading: true,
       error: null,
@@ -115,6 +117,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       docTypes,
       docketNumber: docketNumber ?? '',
       customerNumber: customerNumber ?? '',
+      numberOfSheets: numberOfSheets ?? '',
     });
 
     try {
@@ -129,6 +132,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
             docTypes: docTypes.map(String),
             ...(docketNumber?.trim() && { docketNumber: docketNumber.trim() }),
             ...(customerNumber?.trim() && { customerNumber: customerNumber.trim() }),
+            ...(numberOfSheets?.trim() && Number(numberOfSheets) > 0 && { numberOfSheets: Number(numberOfSheets) }),
             ...(attorney && {
               attorney: {
                 FirstName: attorney.firstName ?? null,
