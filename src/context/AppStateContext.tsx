@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import { GENERATE_DOC_URL, API_HEADERS, REQUEST_TIMEOUT, CLAIMS_API_BASE, AUTH_HEADER } from '@/config/api';
+import { GENERATE_DOC_URL, IDS_TEMPLATE_URL, MULTIPART_HEADERS, REQUEST_TIMEOUT, CLAIMS_API_BASE, AUTH_HEADER } from '@/config/api';
 import { DocType } from '@/types/docTypes';
 import { Attorney } from '@/types/attorney';
 
@@ -84,8 +84,9 @@ const N8N_WEBHOOK_URL =
 interface AppStateContextValue {
   documents: DocumentsState;
   setDocumentsFormValues: (pctNumber: string, docTypes: DocType[], docketNumber: string, customerNumber: string, numberOfSheets: string) => void;
-  searchFile: (pctNumber: string, docTypes: DocType[], attorney?: Attorney | null, docketNumber?: string, customerNumber?: string, numberOfSheets?: string) => Promise<void>;
+  searchFile: (pctNumber: string, docTypes: DocType[], attorney?: Attorney | null, docketNumber?: string, customerNumber?: string, numberOfSheets?: string, idsExcel?: File | null, firstNamedInventor?: string) => Promise<void>;
   downloadFile: () => void;
+  downloadIdsTemplate: () => Promise<void>;
   resetDocuments: () => void;
 
   claims: ClaimsState;
@@ -107,7 +108,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     setDocuments(prev => ({ ...prev, pctNumber, docTypes, docketNumber, customerNumber, numberOfSheets }));
   }, []);
 
-  const searchFile = useCallback(async (pctNumber: string, docTypes: DocType[], attorney?: Attorney | null, docketNumber?: string, customerNumber?: string, numberOfSheets?: string) => {
+  const searchFile = useCallback(async (pctNumber: string, docTypes: DocType[], attorney?: Attorney | null, docketNumber?: string, customerNumber?: string, numberOfSheets?: string, idsExcel?: File | null, firstNamedInventor?: string) => {
     setDocuments({
       isLoading: true,
       error: null,
@@ -124,25 +125,31 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
 
+      // The generate endpoint expects multipart/form-data (it accepts an optional IDS
+      // Excel upload). Repeated `docTypes` keys bind to the List<DocType>; dotted
+      // `Attorney.*` keys bind to the nested AttorneyInfo.
+      const formData = new FormData();
+      formData.append('pctNumber', pctNumber);
+      docTypes.forEach(t => formData.append('docTypes', String(t)));
+      if (docketNumber?.trim()) formData.append('docketNumber', docketNumber.trim());
+      if (customerNumber?.trim()) formData.append('customerNumber', customerNumber.trim());
+      if (numberOfSheets?.trim() && Number(numberOfSheets) > 0) formData.append('numberOfSheets', String(Number(numberOfSheets)));
+      if (attorney) {
+        if (attorney.firstName) formData.append('Attorney.FirstName', attorney.firstName);
+        if (attorney.middleName) formData.append('Attorney.MiddleName', attorney.middleName);
+        if (attorney.lastName) formData.append('Attorney.LastName', attorney.lastName);
+        if (attorney.phone) formData.append('Attorney.PhoneNumber', attorney.phone);
+        if (attorney.regNumber) formData.append('Attorney.RegistrationNumber', attorney.regNumber);
+      }
+      if (idsExcel) {
+        formData.append('idsExcel', idsExcel);
+        if (firstNamedInventor?.trim()) formData.append('firstNamedInventor', firstNamedInventor.trim());
+      }
+
       const response = await fetch(GENERATE_DOC_URL, {
         method: 'POST',
-        headers: API_HEADERS,
-        body: JSON.stringify({
-            pctNumber,
-            docTypes: docTypes.map(String),
-            ...(docketNumber?.trim() && { docketNumber: docketNumber.trim() }),
-            ...(customerNumber?.trim() && { customerNumber: customerNumber.trim() }),
-            ...(numberOfSheets?.trim() && Number(numberOfSheets) > 0 && { numberOfSheets: Number(numberOfSheets) }),
-            ...(attorney && {
-              attorney: {
-                FirstName: attorney.firstName ?? null,
-                MiddleName: attorney.middleName ?? null,
-                LastName: attorney.lastName ?? null,
-                PhoneNumber: attorney.phone ?? null,
-                RegistrationNumber: attorney.regNumber,
-              },
-            }),
-          }),
+        headers: MULTIPART_HEADERS,
+        body: formData,
         signal: controller.signal,
       });
 
@@ -200,6 +207,26 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       URL.revokeObjectURL(url);
     }
   }, [documents.fileBlob, documents.fileName]);
+
+  const downloadIdsTemplate = useCallback(async () => {
+    try {
+      const response = await fetch(IDS_TEMPLATE_URL, { method: 'GET', headers: AUTH_HEADER });
+      if (!response.ok) throw new Error(`Failed to download template (${response.status})`);
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'IDS_form_template.xlsx';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'An unexpected error occurred';
+      setDocuments(prev => ({ ...prev, error: message }));
+    }
+  }, []);
 
   const resetDocuments = useCallback(() => {
     setDocuments(defaultDocumentsState);
@@ -313,6 +340,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
         setDocumentsFormValues,
         searchFile,
         downloadFile,
+        downloadIdsTemplate,
         resetDocuments,
         claims,
         setClaimsFormValues,

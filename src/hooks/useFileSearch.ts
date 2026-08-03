@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { GENERATE_DOC_URL, API_HEADERS, REQUEST_TIMEOUT } from '@/config/api';
+import { GENERATE_DOC_URL, MULTIPART_HEADERS, REQUEST_TIMEOUT } from '@/config/api';
 import { DocType } from '@/types/docTypes';
 
 /**
@@ -39,14 +39,16 @@ export const useFileSearch = () => {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
 
-      // Make API request using POST with JSON body
+      // Make API request using POST with multipart/form-data body
+      // (the generate endpoint accepts an optional IDS Excel upload).
+      const formData = new FormData();
+      formData.append('pctNumber', pctNumber);
+      docTypes.forEach(t => formData.append('docTypes', String(t)));
+
       const response = await fetch(GENERATE_DOC_URL, {
         method: 'POST',
-        headers: API_HEADERS,
-        body: JSON.stringify({
-          pctNumber,
-          docTypes: docTypes.map(String),
-        }),
+        headers: MULTIPART_HEADERS,
+        body: formData,
         signal: controller.signal,
       });
 

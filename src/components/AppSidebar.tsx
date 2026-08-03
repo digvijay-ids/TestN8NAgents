@@ -15,7 +15,7 @@ import {
 
 const menuItems = [
   { title: "Create Documents", url: "/create-documents", icon: FileText },
-  { title: "US Compliant Claims", url: "/us-compliant-claims", icon: Scale },
+  // { title: "US Compliant Claims", url: "/us-compliant-claims", icon: Scale },
 ];
 
 export function AppSidebar() {

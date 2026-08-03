@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { useAppState } from '@/context/AppStateContext';
 import { DocType, DOC_TYPE_OPTIONS } from '@/types/docTypes';
@@ -11,7 +12,7 @@ import { AttorneySelect } from '@/components/AttorneySelect';
 import { loadAttorney } from '@/lib/attorneyStorage';
 
 export const SearchForm = () => {
-  const { documents, setDocumentsFormValues, searchFile, downloadFile, resetDocuments } = useAppState();
+  const { documents, setDocumentsFormValues, searchFile, downloadFile, downloadIdsTemplate, resetDocuments } = useAppState();
 
   // Initialise local form fields from persisted context so they survive navigation
   const [pctNumber, setPctNumber] = useState(documents.pctNumber);
@@ -21,8 +22,22 @@ export const SearchForm = () => {
   const [numberOfSheets, setNumberOfSheets] = useState(documents.numberOfSheets);
   const [validationError, setValidationError] = useState<string | null>(null);
 
+  // IDS can be generated either from the database (existing flow) or from an uploaded Excel workbook.
+  const [idsSource, setIdsSource] = useState<'database' | 'excel'>('database');
+  const [idsExcelFile, setIdsExcelFile] = useState<File | null>(null);
+  const [firstNamedInventor, setFirstNamedInventor] = useState('');
+
   // The sheet count only applies to the PCT Transmittal (PTO-1390) form.
   const showSheetsInput = selectedDocTypes.includes(DocType.PctTransmittal) || selectedDocTypes.includes(DocType.All);
+
+  // IDS-from-Excel controls appear whenever IDS is generated - either selected directly or via "All".
+  const isIdsSelected = selectedDocTypes.includes(DocType.IDS) || selectedDocTypes.includes(DocType.All);
+  const useExcelIds = isIdsSelected && idsSource === 'excel';
+  // "IDS only" (PCT optional) means IDS is the single selection - "All" always pulls other docs that need the PCT.
+  const isIdsOnly = selectedDocTypes.length === 1 && selectedDocTypes.includes(DocType.IDS);
+  // When generating IDS-only from Excel, PCT is not required - the Excel workbook is required instead
+  // (enforced via isSearchDisabled / handleSearch below).
+  const pctRequired = !(useExcelIds && isIdsOnly);
 
   // Keep context form values in sync (so they survive the next unmount)
   useEffect(() => {
@@ -53,7 +68,10 @@ export const SearchForm = () => {
   };
 
   const isSearchDisabled =
-    !pctNumber.trim() || !isValidPctNumber(pctNumber) || selectedDocTypes.length === 0 || documents.isLoading;
+    documents.isLoading ||
+    selectedDocTypes.length === 0 ||
+    (pctRequired && (!pctNumber.trim() || !isValidPctNumber(pctNumber))) ||
+    (useExcelIds && !idsExcelFile);
 
   const handleDocTypeChange = (docType: DocType, checked: boolean) => {
     if (docType === DocType.All) {
@@ -68,9 +86,20 @@ export const SearchForm = () => {
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateInput(pctNumber)) return;
+    if (pctRequired && !validateInput(pctNumber)) return;
     if (selectedDocTypes.length === 0) { setValidationError('Please select at least one document type'); return; }
-    await searchFile(pctNumber.trim(), selectedDocTypes, loadAttorney(), docketNumber.trim(), customerNumber.trim(), numberOfSheets.trim());
+    if (useExcelIds && !idsExcelFile) { setValidationError('Please upload an IDS Excel file (.xlsx)'); return; }
+    setValidationError(null);
+    await searchFile(
+      pctNumber.trim(),
+      selectedDocTypes,
+      loadAttorney(),
+      docketNumber.trim(),
+      customerNumber.trim(),
+      numberOfSheets.trim(),
+      useExcelIds ? idsExcelFile : null,
+      useExcelIds ? firstNamedInventor.trim() : undefined,
+    );
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -88,6 +117,9 @@ export const SearchForm = () => {
     setDocketNumber('');
     setCustomerNumber('');
     setNumberOfSheets('');
+    setIdsSource('database');
+    setIdsExcelFile(null);
+    setFirstNamedInventor('');
     setValidationError(null);
     resetDocuments();
   };
@@ -109,6 +141,8 @@ export const SearchForm = () => {
           <div className="space-y-2">
             <label htmlFor="pctNumber" className="text-sm font-medium text-foreground">
               PCT Number
+              {pctRequired && <span className="font-normal text-muted-foreground"> *</span>}
+              {!pctRequired && <span className="font-normal text-muted-foreground"> (optional)</span>}
             </label>
             <Input
               id="pctNumber"
@@ -201,6 +235,71 @@ export const SearchForm = () => {
               <p className="text-xs text-muted-foreground">Please select at least one document type</p>
             )}
           </div>
+
+          {isIdsSelected && (
+            <div className="space-y-3 rounded-md border border-border p-3">
+              <Label className="text-sm font-medium text-foreground">IDS Source</Label>
+              <RadioGroup
+                value={idsSource}
+                onValueChange={(value) => setIdsSource(value as 'database' | 'excel')}
+                disabled={isLoading}
+                className="space-y-1"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="database" id="idsSource-database" />
+                  <Label htmlFor="idsSource-database" className="text-sm font-normal cursor-pointer">From Database</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="excel" id="idsSource-excel" />
+                  <Label htmlFor="idsSource-excel" className="text-sm font-normal cursor-pointer">From Excel</Label>
+                </div>
+              </RadioGroup>
+
+              {useExcelIds && (
+                <div className="space-y-3 pt-1">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={downloadIdsTemplate}
+                    disabled={isLoading}
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    Download IDS Template
+                  </Button>
+                  <div className="space-y-2">
+                    <label htmlFor="idsExcelFile" className="text-sm font-medium text-foreground">
+                      IDS Workbook <span className="font-normal text-muted-foreground">(.xlsx)</span>
+                    </label>
+                    <Input
+                      id="idsExcelFile"
+                      type="file"
+                      accept=".xlsx"
+                      onChange={(e) => setIdsExcelFile(e.target.files?.[0] ?? null)}
+                      disabled={isLoading}
+                    />
+                    {idsExcelFile && (
+                      <p className="text-xs text-muted-foreground truncate">Selected: {idsExcelFile.name}</p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="firstNamedInventor" className="text-sm font-medium text-foreground">
+                      First Named Inventor <span className="font-normal text-muted-foreground">(optional)</span>
+                    </label>
+                    <Input
+                      id="firstNamedInventor"
+                      type="text"
+                      placeholder="e.g., John A. Smith"
+                      value={firstNamedInventor}
+                      onChange={(e) => setFirstNamedInventor(e.target.value)}
+                      disabled={isLoading}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           <Button type="submit" className="w-full" disabled={isSearchDisabled}>
             {isLoading ? (

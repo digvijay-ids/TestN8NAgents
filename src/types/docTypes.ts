@@ -16,7 +16,7 @@ export enum DocType {
   /** All document types */
   All = 5,
   /** IDS Latest Version document */
-  IDSLatestVersion = 6,
+  // IDSLatestVersion = 6,
   /** IDS Latest Version document */
   CombinedDeclarationAndAssignment = 7,
   /** US Compliant Claims document */
@@ -36,7 +36,6 @@ export const DOC_TYPE_OPTIONS = [
   { value: DocType.Inventor, label: 'Inventor' },
   { value: DocType.MicroEntity, label: 'Micro Entity' },
   { value: DocType.IDS, label: 'Information Disclosure Statement (IDS)' },
-  { value: DocType.IDSLatestVersion, label: 'IDS (Seperate forms)' },
   { value: DocType.CombinedDeclarationAndAssignment, label: 'Combined Declaration and Assignment' },
   { value: DocType.USClaims, label: 'US Compliant Claims' },
   { value: DocType.IdsTransmittal, label: 'IDS Transmittal' },

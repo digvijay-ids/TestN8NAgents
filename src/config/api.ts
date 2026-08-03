@@ -11,6 +11,9 @@ export const API_BASE_URL =
 // Generate endpoint URL
 export const GENERATE_DOC_URL = `${API_BASE_URL}/generate`;
 
+// IDS Excel template download URL
+export const IDS_TEMPLATE_URL = `${API_BASE_URL}/ids-excel-template`;
+
 // Claims endpoint URL
 export const CLAIMS_API_BASE = `${API_BASE_URL}/claims`;
 
@@ -28,6 +31,14 @@ export const AUTH_HEADER: Record<string, string> =
 export const API_HEADERS: Record<string, string> = {
   Accept: '*/*',
   'Content-Type': 'application/json',
+  ...AUTH_HEADER,
+};
+
+// Request headers for multipart/form-data POST requests.
+// NOTE: do NOT set Content-Type here - the browser must set it together with the
+// multipart boundary when a FormData body is passed to fetch.
+export const MULTIPART_HEADERS: Record<string, string> = {
+  Accept: '*/*',
   ...AUTH_HEADER,
 };
 

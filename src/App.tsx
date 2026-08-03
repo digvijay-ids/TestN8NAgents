@@ -22,7 +22,7 @@ const App = () => (
             <Route element={<Layout />}>
               <Route path="/" element={<Navigate to="/create-documents" replace />} />
               <Route path="/create-documents" element={<Index />} />
-              <Route path="/us-compliant-claims" element={<ClaimsPage />} />
+              {/* <Route path="/us-compliant-claims" element={<ClaimsPage />} /> */}
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
