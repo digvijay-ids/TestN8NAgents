@@ -1,5 +1,7 @@
-import { useState } from 'react';
-import { Search, Loader2, AlertCircle, GitBranch } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Search, Loader2, AlertCircle, GitBranch, Upload } from 'lucide-react';
+import { toast } from 'sonner';
+import { useDocketMap } from '@/hooks/useDocketMap';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,6 +16,23 @@ const ContinuityPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [wrapper, setWrapper] = useState<PatentFileWrapper | null>(null);
+
+  const { lookup, mergeFromXml } = useDocketMap();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleUploadClick = () => fileInputRef.current?.click();
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // allow re-selecting the same file
+    if (!file) return;
+    try {
+      const count = await mergeFromXml(file);
+      toast.success(`${count} docket number${count === 1 ? '' : 's'} mapped`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to read the XML file');
+    }
+  };
 
   const isValid = APP_NUMBER_REGEX.test(applicationNumber.trim());
 
@@ -71,6 +90,14 @@ const ContinuityPage = () => {
 
   return (
     <div className="p-4 md:p-6">
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".xml,text/xml,application/xml"
+        data-testid="docket-xml-input"
+        className="hidden"
+        onChange={handleFileChange}
+      />
       {!wrapper ? (
         <div className="flex items-center justify-center min-h-[calc(100vh-6rem)]">
           <Card className="w-full max-w-md shadow-lg">
@@ -117,6 +144,15 @@ const ContinuityPage = () => {
                     </>
                   )}
                 </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleUploadClick}
+                >
+                  <Upload className="mr-2 h-4 w-4" />
+                  Upload docket XML
+                </Button>
               </form>
             </CardContent>
           </Card>
@@ -131,10 +167,21 @@ const ContinuityPage = () => {
               <h1 className="font-serif text-2xl font-semibold text-balance">
                 Continuity chain for application{' '}
                 <span className="font-mono">{wrapper.applicationNumberText}</span>
+                {lookup(wrapper.applicationNumberText) && (
+                  <span className="ml-2 font-mono text-lg font-normal text-muted-foreground">
+                    · {lookup(wrapper.applicationNumberText)}
+                  </span>
+                )}
               </h1>
-              <Button variant="outline" size="sm" onClick={handleNewSearch}>
-                New search
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={handleUploadClick}>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Upload docket XML
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleNewSearch}>
+                  New search
+                </Button>
+              </div>
             </div>
           </div>
 
