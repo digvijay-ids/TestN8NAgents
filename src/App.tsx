@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import Index from "./pages/Index";
 import ClaimsPage from "./pages/ClaimsPage";
+import ContinuityPage from "./pages/ContinuityPage";
 import NotFound from "./pages/NotFound";
 import { AppStateProvider } from "./context/AppStateContext";
 
@@ -23,6 +24,7 @@ const App = () => (
               <Route path="/" element={<Navigate to="/create-documents" replace />} />
               <Route path="/create-documents" element={<Index />} />
               {/* <Route path="/us-compliant-claims" element={<ClaimsPage />} /> */}
+              <Route path="/continuity" element={<ContinuityPage />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

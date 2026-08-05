@@ -56,7 +56,16 @@ export default {
   				'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
   				border: 'hsl(var(--sidebar-border))',
   				ring: 'hsl(var(--sidebar-ring))'
-  			}
+  			},
+  			status: {
+  				granted: 'hsl(var(--status-granted))',
+  				'granted-bg': 'hsl(var(--status-granted-bg))',
+  				active: 'hsl(var(--status-active))',
+  				'active-bg': 'hsl(var(--status-active-bg))',
+  				docketed: 'hsl(var(--status-docketed))',
+  				'docketed-bg': 'hsl(var(--status-docketed-bg))'
+  			},
+  			'current-highlight': 'hsl(var(--current-bg))'
   		},
   		borderRadius: {
   			lg: 'var(--radius)',
