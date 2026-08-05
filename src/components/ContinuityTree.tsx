@@ -1,6 +1,7 @@
 import { Fragment } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { useDocketMap } from '@/hooks/useDocketMap';
 import type { PatentFileWrapper } from '@/types/continuity';
 
 interface ContinuityTreeProps {
@@ -57,6 +58,7 @@ const legend: { variant: StatusVariant; label: string }[] = [
 ];
 
 export function ContinuityTree({ wrapper }: ContinuityTreeProps) {
+  const { lookup } = useDocketMap();
   const links = wrapper.parentContinuityBag ?? [];
 
   // Order ancestors oldest-first (root of the chain) through to the application queried.
@@ -146,6 +148,11 @@ export function ContinuityTree({ wrapper }: ContinuityTreeProps) {
                   <div className="flex items-baseline justify-between gap-3 flex-wrap mb-1.5">
                     <span className="font-mono text-base font-semibold tracking-tight">
                       {formatAppNumber(node.appNumber)}
+                      {lookup(node.appNumber) && (
+                        <span className="ml-2 font-mono text-sm font-normal text-muted-foreground">
+                          · {lookup(node.appNumber)}
+                        </span>
+                      )}
                       {node.isCurrent && (
                         <span className="ml-2 align-middle rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-sans font-bold uppercase tracking-wide text-primary">
                           Queried
