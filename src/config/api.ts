@@ -11,6 +11,9 @@ export const API_BASE_URL =
 // Generate endpoint URL
 export const GENERATE_DOC_URL = `${API_BASE_URL}/generate`;
 
+// Generate-from-USPTO endpoint URL (documents from a USPTO application-number lookup)
+export const GENERATE_FROM_USPTO_URL = `${API_BASE_URL}/generate-from-uspto`;
+
 // IDS Excel template download URL
 export const IDS_TEMPLATE_URL = `${API_BASE_URL}/ids-excel-template`;
 
