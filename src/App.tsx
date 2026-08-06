@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import UsptoPage from "./pages/UsptoPage";
 import ContinuityPage from "./pages/ContinuityPage";
 import LoginPage from "./pages/LoginPage";
+import LandingPage from "./pages/LandingPage";
 import NotFound from "./pages/NotFound";
 import UsersAdminPage from "./pages/admin/UsersAdminPage";
 import RolesAdminPage from "./pages/admin/RolesAdminPage";
@@ -27,8 +28,8 @@ const App = () => (
         <AppStateProvider>
           <BrowserRouter basename={import.meta.env.BASE_URL}>
             <Routes>
-              {/* Public routes — combined landing + login */}
-              <Route path="/" element={<LoginPage />} />
+              {/* Public routes */}
+              <Route path="/" element={<LandingPage />} />
               <Route path="/login" element={<LoginPage />} />
 
               {/* Private routes (guarded) */}
