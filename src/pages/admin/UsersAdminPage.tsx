@@ -16,7 +16,7 @@ import {
 import type { Page, Profile, Role } from '@/types/access';
 import {
   listProfiles, listRoles, listPages, listUserRoles, listOverrides,
-  createUser, setUserActive, setUserRoles, setUserOverride,
+  createUser, updateUser, setUserActive, setUserRoles, setUserOverride,
 } from '@/lib/adminApi';
 
 type OverrideMap = Record<string, Record<string, 'allow' | 'deny'>>; // userId -> pageId -> access
@@ -109,6 +109,7 @@ const UsersAdminPage = () => {
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
+                    <EditUserDialog user={u} onSaved={reload} />
                     <RolesDialog user={u} roles={roles} current={userRoles[u.id] ?? []} onSaved={reload} />
                     <OverridesDialog user={u} pages={pages} current={overrides[u.id] ?? {}} onSaved={reload} />
                   </div>
@@ -178,6 +179,62 @@ function CreateUserDialog({ roles, onCreated }: { roles: Role[]; onCreated: () =
             {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null} Create
           </Button>
         </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function EditUserDialog({ user, onSaved }: { user: Profile; onSaved: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [fullName, setFullName] = useState(user.full_name ?? '');
+  const [email, setEmail] = useState(user.email);
+  const [password, setPassword] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setFullName(user.full_name ?? '');
+      setEmail(user.email);
+      setPassword('');
+    }
+  }, [open, user]);
+
+  const save = async () => {
+    setBusy(true);
+    try {
+      const patch: { full_name?: string; email?: string; password?: string } = {};
+      if (fullName !== (user.full_name ?? '')) patch.full_name = fullName;
+      if (email.trim() && email.trim() !== user.email) patch.email = email.trim();
+      if (password) patch.password = password;
+      if (Object.keys(patch).length === 0) {
+        setOpen(false);
+        return;
+      }
+      await updateUser(user.id, patch);
+      toast.success('User updated');
+      setOpen(false);
+      onSaved();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Failed to update user');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild><Button variant="outline" size="sm">Edit</Button></DialogTrigger>
+      <DialogContent>
+        <DialogHeader><DialogTitle>Edit {user.email}</DialogTitle></DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-2"><Label>Full name</Label><Input value={fullName} onChange={(e) => setFullName(e.target.value)} /></div>
+          <div className="space-y-2"><Label>Email</Label><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></div>
+          <div className="space-y-2">
+            <Label>New password</Label>
+            <Input type="text" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Leave blank to keep current" />
+          </div>
+        </div>
+        <DialogFooter><Button onClick={save} disabled={busy}>{busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null} Save</Button></DialogFooter>
       </DialogContent>
     </Dialog>
   );

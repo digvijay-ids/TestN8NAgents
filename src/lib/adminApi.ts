@@ -53,6 +53,19 @@ export async function createUser(payload: CreateUserPayload): Promise<{ user_id:
   });
 }
 
+export interface UpdateUserPayload {
+  full_name?: string;
+  email?: string;
+  password?: string;
+}
+
+export async function updateUser(userId: string, patch: UpdateUserPayload): Promise<void> {
+  await apiJson(`/api/admin/users/${userId}`, {
+    method: 'PUT',
+    body: JSON.stringify(patch),
+  });
+}
+
 export async function setUserActive(userId: string, isActive: boolean): Promise<void> {
   await apiJson(`/api/admin/users/${userId}`, {
     method: 'PATCH',
