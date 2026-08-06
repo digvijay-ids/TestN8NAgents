@@ -1,46 +1,41 @@
-import { supabase } from '@/lib/supabaseClient';
+import { apiJson } from '@/lib/authApi';
 import type { Page, Profile, Role } from '@/types/access';
 
 /**
- * Admin-only data access. All writes are governed server-side by RLS
- * (super-admin only). User creation goes through the `admin-create-user`
- * Edge Function, which holds the service_role key — never the browser.
+ * Admin data access via the patmimo-utilities backend (/api/admin/*).
+ * All calls carry the caller's bearer token; the server enforces super-admin
+ * (and Postgres RLS enforces it again).
  */
 
+interface UserRow extends Profile {
+  role_ids: string[];
+}
+
 export async function listProfiles(): Promise<Profile[]> {
-  const { data, error } = await supabase.from('profiles').select('*').order('created_at');
-  if (error) throw error;
-  return (data as Profile[]) ?? [];
+  const rows = await apiJson<UserRow[]>('/api/admin/users');
+  return rows;
 }
 
 export async function listRoles(): Promise<Role[]> {
-  const { data, error } = await supabase.from('roles').select('*').order('name');
-  if (error) throw error;
-  return (data as Role[]) ?? [];
+  return apiJson<Role[]>('/api/admin/roles');
 }
 
 export async function listPages(): Promise<Page[]> {
-  const { data, error } = await supabase.from('pages').select('*').order('sort_order');
-  if (error) throw error;
-  return (data as Page[]) ?? [];
+  return apiJson<Page[]>('/api/admin/pages');
 }
 
 export async function listUserRoles(): Promise<{ user_id: string; role_id: string }[]> {
-  const { data, error } = await supabase.from('user_roles').select('user_id, role_id');
-  if (error) throw error;
-  return data ?? [];
+  // Derived from the users list (each row carries its role_ids).
+  const rows = await apiJson<UserRow[]>('/api/admin/users');
+  return rows.flatMap((u) => u.role_ids.map((role_id) => ({ user_id: u.id, role_id })));
 }
 
 export async function listRolePages(): Promise<{ role_id: string; page_id: string }[]> {
-  const { data, error } = await supabase.from('role_pages').select('role_id, page_id');
-  if (error) throw error;
-  return data ?? [];
+  return apiJson<{ role_id: string; page_id: string }[]>('/api/admin/role-pages');
 }
 
 export async function listOverrides(): Promise<{ user_id: string; page_id: string; access: 'allow' | 'deny' }[]> {
-  const { data, error } = await supabase.from('user_page_overrides').select('user_id, page_id, access');
-  if (error) throw error;
-  return data ?? [];
+  return apiJson<{ user_id: string; page_id: string; access: 'allow' | 'deny' }[]>('/api/admin/overrides');
 }
 
 export interface CreateUserPayload {
@@ -52,24 +47,24 @@ export interface CreateUserPayload {
 }
 
 export async function createUser(payload: CreateUserPayload): Promise<{ user_id: string }> {
-  const { data, error } = await supabase.functions.invoke('admin-create-user', { body: payload });
-  if (error) throw error;
-  if (data?.error) throw new Error(data.error);
-  return data as { user_id: string };
+  return apiJson<{ user_id: string }>('/api/admin/users', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
 }
 
 export async function setUserActive(userId: string, isActive: boolean): Promise<void> {
-  const { error } = await supabase.from('profiles').update({ is_active: isActive }).eq('id', userId);
-  if (error) throw error;
+  await apiJson(`/api/admin/users/${userId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ is_active: isActive }),
+  });
 }
 
 export async function setUserRoles(userId: string, roleIds: string[]): Promise<void> {
-  const { error: delErr } = await supabase.from('user_roles').delete().eq('user_id', userId);
-  if (delErr) throw delErr;
-  if (roleIds.length > 0) {
-    const { error } = await supabase.from('user_roles').insert(roleIds.map((role_id) => ({ user_id: userId, role_id })));
-    if (error) throw error;
-  }
+  await apiJson(`/api/admin/users/${userId}/roles`, {
+    method: 'PUT',
+    body: JSON.stringify({ role_ids: roleIds }),
+  });
 }
 
 export async function setUserOverride(
@@ -77,44 +72,36 @@ export async function setUserOverride(
   pageId: string,
   access: 'allow' | 'deny' | null,
 ): Promise<void> {
-  if (access === null) {
-    const { error } = await supabase
-      .from('user_page_overrides')
-      .delete()
-      .eq('user_id', userId)
-      .eq('page_id', pageId);
-    if (error) throw error;
-    return;
-  }
-  const { error } = await supabase
-    .from('user_page_overrides')
-    .upsert({ user_id: userId, page_id: pageId, access }, { onConflict: 'user_id,page_id' });
-  if (error) throw error;
+  await apiJson(`/api/admin/users/${userId}/overrides`, {
+    method: 'PUT',
+    body: JSON.stringify({ overrides: [{ page_id: pageId, access }] }),
+  });
 }
 
 export async function createRole(name: string, description: string): Promise<void> {
-  const { error } = await supabase.from('roles').insert({ name, description: description || null });
-  if (error) throw error;
+  await apiJson('/api/admin/roles', {
+    method: 'POST',
+    body: JSON.stringify({ name, description: description || null }),
+  });
 }
 
 export async function deleteRole(roleId: string): Promise<void> {
-  const { error } = await supabase.from('roles').delete().eq('id', roleId);
-  if (error) throw error;
+  await apiJson(`/api/admin/roles/${roleId}`, { method: 'DELETE' });
 }
 
 export async function setRolePages(roleId: string, pageIds: string[]): Promise<void> {
-  const { error: delErr } = await supabase.from('role_pages').delete().eq('role_id', roleId);
-  if (delErr) throw delErr;
-  if (pageIds.length > 0) {
-    const { error } = await supabase.from('role_pages').insert(pageIds.map((page_id) => ({ role_id: roleId, page_id })));
-    if (error) throw error;
-  }
+  await apiJson(`/api/admin/roles/${roleId}/pages`, {
+    method: 'PUT',
+    body: JSON.stringify({ page_ids: pageIds }),
+  });
 }
 
 export async function updatePage(
   pageId: string,
   patch: Partial<Pick<Page, 'is_public' | 'label' | 'sort_order'>>,
 ): Promise<void> {
-  const { error } = await supabase.from('pages').update(patch).eq('id', pageId);
-  if (error) throw error;
+  await apiJson(`/api/admin/pages/${pageId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(patch),
+  });
 }

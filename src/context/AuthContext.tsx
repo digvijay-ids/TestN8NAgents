@@ -1,14 +1,13 @@
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
-import type { Session, User } from '@supabase/supabase-js';
-import { supabase } from '@/lib/supabaseClient';
-import type { Page, Profile } from '@/types/access';
+import * as authApi from '@/lib/authApi';
+import type { AuthUser } from '@/lib/authApi';
+import type { Profile } from '@/types/access';
 
 interface AuthContextValue {
-  session: Session | null;
-  user: User | null;
+  user: AuthUser | null;
   profile: Profile | null;
   isSuperAdmin: boolean;
-  /** Paths the current user may access (from public.my_pages()). */
+  /** Paths the current user may access (from /api/auth/me). */
   accessiblePaths: Set<string>;
   /** Paths flagged public (readable without auth). */
   publicPaths: Set<string>;
@@ -21,80 +20,62 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [accessiblePaths, setAccessiblePaths] = useState<Set<string>>(new Set());
   const [publicPaths, setPublicPaths] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
-  const user = session?.user ?? null;
-  const isSuperAdmin = user?.app_metadata?.is_super_admin === true;
+  const isSuperAdmin = user?.is_super_admin === true;
+  const profile: Profile | null = user
+    ? { id: user.user_id, email: user.email ?? '', full_name: user.full_name ?? null, is_active: true, created_at: '' }
+    : null;
 
-  const loadAccess = useCallback(async (activeUser: User | null) => {
-    if (!activeUser) {
-      setProfile(null);
-      setAccessiblePaths(new Set());
-      return;
-    }
-    // Profile + accessible pages in parallel.
-    const [{ data: profileData }, { data: pagesData }] = await Promise.all([
-      supabase.from('profiles').select('*').eq('id', activeUser.id).maybeSingle(),
-      supabase.rpc('my_pages'),
-    ]);
-    setProfile((profileData as Profile) ?? null);
-    const paths = new Set<string>(((pagesData as Page[]) ?? []).map((p) => p.path));
-    setAccessiblePaths(paths);
+  const applyUser = useCallback((me: AuthUser | null) => {
+    setUser(me);
+    setAccessiblePaths(new Set(me?.accessible_paths ?? []));
   }, []);
 
   useEffect(() => {
     let active = true;
-
-    // Public pages are readable without auth (anon RLS policy); load once.
-    supabase
-      .from('pages')
-      .select('path')
-      .eq('is_public', true)
-      .then(({ data }) => {
-        if (active && data) setPublicPaths(new Set(data.map((p) => p.path as string)));
-      });
-
-    supabase.auth.getSession().then(async ({ data }) => {
+    (async () => {
+      const [paths, me] = await Promise.all([authApi.fetchPublicPaths(), authApi.fetchMe()]);
       if (!active) return;
-      setSession(data.session);
-      await loadAccess(data.session?.user ?? null);
-      if (active) setLoading(false);
-    });
-
-    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
-      if (!active) return;
-      setSession(newSession);
-      await loadAccess(newSession?.user ?? null);
-    });
-
+      setPublicPaths(new Set(paths));
+      applyUser(me);
+      setLoading(false);
+    })();
     return () => {
       active = false;
-      sub.subscription.unsubscribe();
     };
-  }, [loadAccess]);
+  }, [applyUser]);
 
-  const signIn = useCallback(async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error: error?.message ?? null };
-  }, []);
+  const signIn = useCallback(
+    async (email: string, password: string) => {
+      try {
+        await authApi.login(email, password);
+        const me = await authApi.fetchMe();
+        applyUser(me);
+        return { error: null };
+      } catch (err) {
+        return { error: err instanceof Error ? err.message : 'Sign in failed' };
+      }
+    },
+    [applyUser],
+  );
 
   const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
-    setAccessiblePaths(new Set());
-    setProfile(null);
-  }, []);
+    await authApi.logout();
+    applyUser(null);
+  }, [applyUser]);
 
   const refreshAccess = useCallback(async () => {
-    await loadAccess(user);
-  }, [loadAccess, user]);
+    const me = await authApi.fetchMe();
+    applyUser(me);
+  }, [applyUser]);
 
   return (
     <AuthContext.Provider
-      value={{ session, user, profile, isSuperAdmin, accessiblePaths, publicPaths, loading, signIn, signOut, refreshAccess }}
+      value={{ user, profile, isSuperAdmin, accessiblePaths, publicPaths, loading, signIn, signOut, refreshAccess }}
     >
       {children}
     </AuthContext.Provider>
