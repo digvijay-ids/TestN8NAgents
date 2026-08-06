@@ -10,18 +10,23 @@ interface LocationState {
   from?: string;
 }
 
+const DEFAULT_LANDING = '/create-documents';
+
 const LoginPage = () => {
   const { user, signIn, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const from = (location.state as LocationState | null)?.from ?? '/';
+
+  const rawFrom = (location.state as LocationState | null)?.from;
+  // Never bounce back to the auth page itself (avoids a redirect loop).
+  const from = rawFrom && rawFrom !== '/' && rawFrom !== '/login' ? rawFrom : DEFAULT_LANDING;
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // Already signed in → bounce to intended destination.
+  // Already signed in → go straight to the app.
   if (!loading && user) {
     return <Navigate to={from} replace />;
   }
@@ -43,11 +48,13 @@ const LoginPage = () => {
     <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-            <Scroll className="h-6 w-6 text-primary" />
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
+            <Scroll className="h-7 w-7 text-primary" />
           </div>
-          <CardTitle className="font-serif text-2xl font-semibold">Sign in to Patmimo</CardTitle>
-          <CardDescription>Enter your credentials to continue</CardDescription>
+          <CardTitle className="font-serif text-3xl font-semibold tracking-tight">Patmimo</CardTitle>
+          <CardDescription className="mt-1">
+            Patent document filing, USPTO data, and continuity tools. Sign in to continue.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
