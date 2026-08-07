@@ -146,7 +146,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
         formData.append('idsExcel', idsExcel);
         if (firstNamedInventor?.trim()) formData.append('firstNamedInventor', firstNamedInventor.trim());
       }
-
+      console.log('GENERATE_DOC_URL:', GENERATE_DOC_URL);
       const response = await fetch(GENERATE_DOC_URL, {
         method: 'POST',
         headers: bearerHeaders(),
