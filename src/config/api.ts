@@ -10,7 +10,7 @@ const BACKEND_URL =
 
 // DocProcessing now lives behind the patmimo-utilities proxy.
 export const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ?? `${BACKEND_URL}/api/DocProcessing`;
+  import.meta.env.VITE_API_BASE_URL ?? `https://docfilling-api.noetherip.com/api/DocProcessing`;
 
 export const GENERATE_DOC_URL = `${API_BASE_URL}/generate`;
 export const GENERATE_FROM_USPTO_URL = `${API_BASE_URL}/generate-from-uspto`;
