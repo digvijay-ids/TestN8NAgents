@@ -6,7 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ContinuityTree } from '@/components/ContinuityTree';
-import { continuityUrl, USPTO_REQUEST_TIMEOUT } from '@/config/usptoApi';
+import { familyUrl, USPTO_REQUEST_TIMEOUT } from '@/config/usptoApi';
+import { bearerHeaders } from '@/config/api';
+import { authErrorMessage } from '@/lib/authApi';
 import type { ContinuityResponse, PatentFileWrapper } from '@/types/continuity';
 
 const APP_NUMBER_REGEX = /^\d{7,8}$/;
@@ -60,12 +62,15 @@ const ContinuityPage = () => {
     const timeoutId = setTimeout(() => controller.abort(), USPTO_REQUEST_TIMEOUT);
 
     try {
-      const res = await fetch(continuityUrl(appNum), {
+      const res = await fetch(familyUrl(appNum), {
         method: 'GET',
-        headers: { Accept: 'application/json' },
+        headers: bearerHeaders({ Accept: 'application/json' }),
         signal: controller.signal,
       });
-      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+      if (!res.ok) {
+        if (res.status === 401 || res.status === 403) throw new Error(await authErrorMessage(res));
+        throw new Error(`Request failed (${res.status})`);
+      }
       const data: ContinuityResponse = await res.json();
       const first = data.patentFileWrapperDataBag?.[0];
       if (!first) throw new Error('No continuity data returned for this application');

@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
-import { REQUEST_TIMEOUT, CLAIMS_API_BASE, AUTH_HEADER } from '@/config/api';
+import { REQUEST_TIMEOUT, CLAIMS_API_BASE, bearerHeaders } from '@/config/api';
+import { authErrorMessage } from '@/lib/authApi';
 
 interface WipoClaim {
   claim_no: number;
@@ -47,12 +48,13 @@ export const useClaimsSearch = () => {
       const encodedPct = encodeURIComponent(pctNumber.trim());
       const claimsRes = await fetch(`${CLAIMS_API_BASE}?pctNumber=${encodedPct}`, {
         method: 'GET',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded', ...AUTH_HEADER },
+        headers: bearerHeaders({ 'Content-Type': 'application/x-www-form-urlencoded' }),
         signal: controller1.signal,
       });
       clearTimeout(timeout1);
 
       if (!claimsRes.ok) {
+        if (claimsRes.status === 401 || claimsRes.status === 403) throw new Error(await authErrorMessage(claimsRes));
         if (claimsRes.status === 404) throw new Error('Application not found. Please check the PCT number.');
         let msg = `Error: ${claimsRes.status} - ${claimsRes.statusText}`;
         try { const d = await claimsRes.json(); if (d.message) msg = d.message; } catch {}

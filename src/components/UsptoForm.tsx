@@ -8,7 +8,8 @@ import { Label } from '@/components/ui/label';
 import { AttorneySelect } from '@/components/AttorneySelect';
 import { loadAttorney } from '@/lib/attorneyStorage';
 import { DocType } from '@/types/docTypes';
-import { GENERATE_FROM_USPTO_URL, API_HEADERS, REQUEST_TIMEOUT } from '@/config/api';
+import { GENERATE_FROM_USPTO_URL, bearerHeaders, REQUEST_TIMEOUT } from '@/config/api';
+import { authErrorMessage } from '@/lib/authApi';
 
 // Only these three document types are derivable from a USPTO application-number lookup.
 // IDS (needs prior-art citations) and the other types are intentionally excluded — the
@@ -109,18 +110,22 @@ export const UsptoForm = () => {
     try {
       const response = await fetch(GENERATE_FROM_USPTO_URL, {
         method: 'POST',
-        headers: API_HEADERS,
+        headers: bearerHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(body),
         signal: controller.signal,
       });
 
       if (!response.ok) {
         let message = `Request failed (${response.status})`;
-        try {
-          const data = await response.json();
-          message = data?.error || data?.message || message;
-        } catch {
-          // non-JSON error body; keep the status-based message
+        if (response.status === 401 || response.status === 403) {
+          message = await authErrorMessage(response);
+        } else {
+          try {
+            const data = await response.json();
+            message = data?.error || data?.message || message;
+          } catch {
+            // non-JSON error body; keep the status-based message
+          }
         }
         setError(message);
         return;

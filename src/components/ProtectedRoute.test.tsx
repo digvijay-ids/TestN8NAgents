@@ -88,4 +88,43 @@ describe('ProtectedRoute', () => {
     renderAt('/admin/users', true);
     expect(screen.getByText('SECRET CONTENT')).toBeInTheDocument();
   });
+
+  it('authenticatedOnly renders for any signed-in user without a page grant', () => {
+    mockAuth.mockReturnValue({ ...base, user: { id: 'u1' }, accessiblePaths: new Set(['/other']) });
+    render(
+      <MemoryRouter initialEntries={['/account']}>
+        <Routes>
+          <Route
+            path="/account"
+            element={
+              <ProtectedRoute authenticatedOnly>
+                <div>SECRET CONTENT</div>
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(screen.getByText('SECRET CONTENT')).toBeInTheDocument();
+  });
+
+  it('authenticatedOnly still redirects unauthenticated users to /login', () => {
+    mockAuth.mockReturnValue({ ...base });
+    render(
+      <MemoryRouter initialEntries={['/account']}>
+        <Routes>
+          <Route path="/login" element={<div>LOGIN PAGE</div>} />
+          <Route
+            path="/account"
+            element={
+              <ProtectedRoute authenticatedOnly>
+                <div>SECRET CONTENT</div>
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(screen.getByText('LOGIN PAGE')).toBeInTheDocument();
+  });
 });

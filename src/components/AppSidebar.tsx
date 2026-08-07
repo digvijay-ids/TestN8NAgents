@@ -1,4 +1,4 @@
-import { FileText, GitBranch, Scroll, Building2, Users, Shield, FileCog, LogOut } from "lucide-react";
+import { FileText, GitBranch, Scroll, Building2, Users, Shield, FileCog, LogOut, UserCog } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation, useNavigate } from "react-router-dom";
 import type { LucideIcon } from "lucide-react";
@@ -104,6 +104,14 @@ export function AppSidebar() {
               <p className="truncate text-[10px] text-muted-foreground">{profile.email}</p>
             </div>
           )}
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild isActive={currentPath === "/account"}>
+              <NavLink to="/account" end className="hover:bg-muted/50" activeClassName="bg-muted text-primary font-medium">
+                <UserCog className="mr-2 h-4 w-4" />
+                {!collapsed && <span>Account</span>}
+              </NavLink>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton onClick={handleSignOut} className="hover:bg-muted/50">
               <LogOut className="mr-2 h-4 w-4" />

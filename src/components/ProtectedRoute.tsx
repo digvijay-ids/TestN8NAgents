@@ -8,6 +8,8 @@ interface ProtectedRouteProps {
   children: ReactNode;
   /** Require super-admin regardless of page grants (e.g. /admin/*). */
   requireSuperAdmin?: boolean;
+  /** Open to any signed-in user regardless of page grants (e.g. /account). */
+  authenticatedOnly?: boolean;
 }
 
 /**
@@ -15,12 +17,17 @@ interface ProtectedRouteProps {
  *  - loading            → spinner
  *  - page is public     → render
  *  - not authenticated  → redirect to /login
+ *  - authenticatedOnly  → render (any signed-in user, no page grant needed)
  *  - super-admin        → render (bypasses page grants)
  *  - requireSuperAdmin  → NoAccess if not super-admin
  *  - path granted       → render
  *  - otherwise          → NoAccess (403)
  */
-export function ProtectedRoute({ children, requireSuperAdmin = false }: ProtectedRouteProps) {
+export function ProtectedRoute({
+  children,
+  requireSuperAdmin = false,
+  authenticatedOnly = false,
+}: ProtectedRouteProps) {
   const { user, isSuperAdmin, accessiblePaths, publicPaths, loading } = useAuth();
   const location = useLocation();
   const path = location.pathname;
@@ -39,6 +46,10 @@ export function ProtectedRoute({ children, requireSuperAdmin = false }: Protecte
 
   if (!user) {
     return <Navigate to="/login" replace state={{ from: path }} />;
+  }
+
+  if (authenticatedOnly && !requireSuperAdmin) {
+    return <>{children}</>;
   }
 
   if (isSuperAdmin) {
