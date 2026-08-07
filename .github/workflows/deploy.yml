@@ -30,6 +30,27 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Verify secrets present
+        run: |
+          check() { if [ -n "$2" ]; then echo "$1: set"; else echo "$1: MISSING"; fi; }
+          check VITE_BACKEND_URL              "$VITE_BACKEND_URL"
+          check VITE_API_BASE_URL             "$VITE_API_BASE_URL"
+          check VITE_ATTORNEY_SEARCH_URL      "$VITE_ATTORNEY_SEARCH_URL"
+          check VITE_USE_MOCK_ATTORNEY_API    "$VITE_USE_MOCK_ATTORNEY_API"
+          check VITE_CLAIMS_WEBHOOK_URL       "$VITE_CLAIMS_WEBHOOK_URL"
+          check VITE_N8N_WEBHOOK_URL          "$VITE_N8N_WEBHOOK_URL"
+          check VITE_REQUEST_TIMEOUT          "$VITE_REQUEST_TIMEOUT"
+          check VITE_ATTORNEY_REQUEST_TIMEOUT "$VITE_ATTORNEY_REQUEST_TIMEOUT"
+        env:
+          VITE_BACKEND_URL: ${{ secrets.VITE_BACKEND_URL }}
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
+          VITE_ATTORNEY_SEARCH_URL: ${{ secrets.VITE_ATTORNEY_SEARCH_URL }}
+          VITE_USE_MOCK_ATTORNEY_API: ${{ secrets.VITE_USE_MOCK_ATTORNEY_API }}
+          VITE_CLAIMS_WEBHOOK_URL: ${{ secrets.VITE_CLAIMS_WEBHOOK_URL }}
+          VITE_N8N_WEBHOOK_URL: ${{ secrets.VITE_N8N_WEBHOOK_URL }}
+          VITE_REQUEST_TIMEOUT: ${{ secrets.VITE_REQUEST_TIMEOUT }}
+          VITE_ATTORNEY_REQUEST_TIMEOUT: ${{ secrets.VITE_ATTORNEY_REQUEST_TIMEOUT }}
+
       - name: Build
         run: npm run build
         env:
