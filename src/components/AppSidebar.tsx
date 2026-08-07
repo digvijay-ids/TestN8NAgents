@@ -25,7 +25,7 @@ interface NavItem {
 
 // Registry of feature pages with their icons; rendered only when the user has access.
 const featureItems: NavItem[] = [
-  { title: "PCT → U.S. Documents"", url: "/create-documents", icon: FileText },
+  { title: "PCT → U.S. Documents", url: "/create-documents", icon: FileText },
   { title: "USPTO Documents", url: "/uspto-documents", icon: Building2 },
   { title: "Continuity", url: "/continuity", icon: GitBranch },
 ];
