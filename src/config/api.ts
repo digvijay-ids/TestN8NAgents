@@ -6,7 +6,7 @@
 import { getAccessToken } from '@/lib/authApi';
 
 const BACKEND_URL =
-  (import.meta.env.VITE_BACKEND_URL as string | undefined)?.replace(/\/$/, '') ?? '';
+  (import.meta.env.VITE_BACKEND_URL as string | undefined)?.replace(/\/$/, '') ?? 'https://docfilling-api.noetherip.com';
 
 // DocProcessing now lives behind the patmimo-utilities proxy.
 export const API_BASE_URL =

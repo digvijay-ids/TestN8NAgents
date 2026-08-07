@@ -12,7 +12,7 @@
  * backend CORS origin (currently wildcard) so it is intentionally not done here.
  */
 
-const BASE_URL = (import.meta.env.VITE_BACKEND_URL as string | undefined)?.replace(/\/$/, '') ?? '';
+const BASE_URL = (import.meta.env.VITE_BACKEND_URL as string | undefined)?.replace(/\/$/, '') ?? 'https://docfilling-api.noetherip.com';
 
 const REFRESH_KEY = 'pm_refresh_token';
 
