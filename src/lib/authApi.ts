@@ -1,13 +1,23 @@
 /**
  * Client for the patmimo-utilities auth + admin backend.
- * Replaces direct supabase-js usage. Tokens live in localStorage; the frontend
- * never talks to Supabase directly.
+ * The frontend never talks to Supabase directly.
+ *
+ * Token storage (XSS hardening):
+ *   - access token  -> in-memory only (never written to web storage). Short-lived
+ *     and re-derived from the refresh token on page load, so it survives reloads
+ *     without ever being readable via localStorage/sessionStorage.
+ *   - refresh token -> sessionStorage (cleared on tab close, not shared across
+ *     tabs, not persisted across browser restarts) instead of localStorage.
+ * The complete fix is an httpOnly refresh cookie; that requires pinning the
+ * backend CORS origin (currently wildcard) so it is intentionally not done here.
  */
 
 const BASE_URL = (import.meta.env.VITE_BACKEND_URL as string | undefined)?.replace(/\/$/, '') ?? '';
 
-const ACCESS_KEY = 'pm_access_token';
 const REFRESH_KEY = 'pm_refresh_token';
+
+// Access token kept only in module memory — deliberately never persisted.
+let accessToken: string | null = null;
 
 export interface AuthUser {
   user_id: string;
@@ -26,17 +36,17 @@ interface LoginResponse {
 }
 
 export function getAccessToken(): string | null {
-  return localStorage.getItem(ACCESS_KEY);
+  return accessToken;
 }
 
 function setTokens(access: string, refresh: string) {
-  localStorage.setItem(ACCESS_KEY, access);
-  localStorage.setItem(REFRESH_KEY, refresh);
+  accessToken = access;
+  sessionStorage.setItem(REFRESH_KEY, refresh);
 }
 
 export function clearTokens() {
-  localStorage.removeItem(ACCESS_KEY);
-  localStorage.removeItem(REFRESH_KEY);
+  accessToken = null;
+  sessionStorage.removeItem(REFRESH_KEY);
 }
 
 /** Extract a human message from a response body, if one is present. */
@@ -72,7 +82,7 @@ export async function authErrorMessage(res: Response, fallback?: string): Promis
 }
 
 async function tryRefresh(): Promise<boolean> {
-  const refresh_token = localStorage.getItem(REFRESH_KEY);
+  const refresh_token = sessionStorage.getItem(REFRESH_KEY);
   if (!refresh_token) return false;
   const res = await fetch(`${BASE_URL}/api/auth/refresh`, {
     method: 'POST',
@@ -130,7 +140,9 @@ export async function logout(): Promise<void> {
 }
 
 export async function fetchMe(): Promise<AuthUser | null> {
-  if (!getAccessToken()) return null;
+  // After a reload the in-memory access token is gone; re-derive it from the
+  // refresh token (sessionStorage) before giving up on the session.
+  if (!getAccessToken() && !(await tryRefresh())) return null;
   const res = await authFetch('/api/auth/me');
   if (!res.ok) {
     clearTokens();
