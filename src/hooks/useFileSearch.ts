@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
-import { GENERATE_DOC_URL, MULTIPART_HEADERS, REQUEST_TIMEOUT } from '@/config/api';
+import { GENERATE_DOC_URL, bearerHeaders, REQUEST_TIMEOUT } from '@/config/api';
+import { authErrorMessage } from '@/lib/authApi';
 import { DocType } from '@/types/docTypes';
 
 /**
@@ -47,7 +48,7 @@ export const useFileSearch = () => {
 
       const response = await fetch(GENERATE_DOC_URL, {
         method: 'POST',
-        headers: MULTIPART_HEADERS,
+        headers: bearerHeaders(),
         body: formData,
         signal: controller.signal,
       });
@@ -56,6 +57,9 @@ export const useFileSearch = () => {
 
       // Handle non-OK responses
       if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          throw new Error(await authErrorMessage(response));
+        }
         let errorMessage = `Error: ${response.status} - ${response.statusText}`;
         
         if (response.status === 500) {

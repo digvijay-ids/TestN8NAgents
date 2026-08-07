@@ -33,9 +33,11 @@ jobs:
       - name: Build
         run: npm run build
         env:
+          # patmimo-utilities backend base URL (auth + DocProcessing proxy).
+          VITE_BACKEND_URL: ${{ secrets.VITE_BACKEND_URL }}
+          # Optional override; defaults to ${VITE_BACKEND_URL}/api/DocProcessing.
+          # If set as a secret it MUST point at the proxy, not the .NET service.
           VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
-          VITE_API_BASIC_AUTH_USER: ${{ secrets.VITE_API_BASIC_AUTH_USER }}
-          VITE_API_BASIC_AUTH_PASS: ${{ secrets.VITE_API_BASIC_AUTH_PASS }}
           VITE_ATTORNEY_SEARCH_URL: ${{ secrets.VITE_ATTORNEY_SEARCH_URL }}
           VITE_USE_MOCK_ATTORNEY_API: ${{ secrets.VITE_USE_MOCK_ATTORNEY_API }}
           VITE_CLAIMS_WEBHOOK_URL: ${{ secrets.VITE_CLAIMS_WEBHOOK_URL }}

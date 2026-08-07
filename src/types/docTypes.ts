@@ -32,13 +32,13 @@ export enum DocType {
  */
 export const DOC_TYPE_OPTIONS = [
   { value: DocType.ADS, label: 'Application Data Sheet (ADS)' },
+  { value: DocType.Inventor, label: 'Inventor Declaration (OATH)' },
   { value: DocType.PowerOfAttorney, label: 'Power of Attorney' },
-  { value: DocType.Inventor, label: 'Inventor' },
-  { value: DocType.MicroEntity, label: 'Micro Entity' },
-  { value: DocType.IDS, label: 'Information Disclosure Statement (IDS)' },
+  { value: DocType.MicroEntity, label: 'Micro Entity (Gross Income Basis)' },
   { value: DocType.CombinedDeclarationAndAssignment, label: 'Combined Declaration and Assignment' },
-  { value: DocType.USClaims, label: 'US Compliant Claims' },
+  { value: DocType.PctTransmittal, label: 'PCT Transmittal (PTO-1390)' },
   { value: DocType.IdsTransmittal, label: 'IDS Transmittal' },
-  { value: DocType.PctTransmittal, label: 'PCT Transmittal' },
+  { value: DocType.USClaims, label: 'US Compliant Claims' },
+  { value: DocType.IDS, label: 'Information Disclosure Statement (IDS)' },
   { value: DocType.All, label: 'All Documents' },
 ] as const;

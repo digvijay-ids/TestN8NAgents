@@ -3,6 +3,8 @@ import {
   ATTORNEY_SEARCH_URL,
   ATTORNEY_REQUEST_TIMEOUT,
 } from '@/config/attorneyApi';
+import { bearerHeaders } from '@/config/api';
+import { authErrorMessage } from '@/lib/authApi';
 
 interface AttorneyOut {
   registration_number: string;
@@ -48,8 +50,11 @@ async function searchRemote(query: string): Promise<Attorney[]> {
   const timeoutId = setTimeout(() => controller.abort(), ATTORNEY_REQUEST_TIMEOUT);
   try {
     const url = `${ATTORNEY_SEARCH_URL}?q=${encodeURIComponent(query.trim())}`;
-    const res = await fetch(url, { method: 'GET', signal: controller.signal });
-    if (!res.ok) throw new Error(`Attorney search failed: ${res.status}`);
+    const res = await fetch(url, { method: 'GET', headers: bearerHeaders(), signal: controller.signal });
+    if (!res.ok) {
+      if (res.status === 401 || res.status === 403) throw new Error(await authErrorMessage(res));
+      throw new Error(`Attorney search failed: ${res.status}`);
+    }
     const data: AttorneyOut[] = await res.json();
     return Array.isArray(data) ? data.map(mapAttorney) : [];
   } finally {

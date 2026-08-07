@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import { GENERATE_DOC_URL, IDS_TEMPLATE_URL, MULTIPART_HEADERS, REQUEST_TIMEOUT, CLAIMS_API_BASE, AUTH_HEADER } from '@/config/api';
+import { GENERATE_DOC_URL, IDS_TEMPLATE_URL, bearerHeaders, REQUEST_TIMEOUT, CLAIMS_API_BASE } from '@/config/api';
+import { authErrorMessage } from '@/lib/authApi';
 import { DocType } from '@/types/docTypes';
 import { Attorney } from '@/types/attorney';
 
@@ -148,7 +149,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
 
       const response = await fetch(GENERATE_DOC_URL, {
         method: 'POST',
-        headers: MULTIPART_HEADERS,
+        headers: bearerHeaders(),
         body: formData,
         signal: controller.signal,
       });
@@ -156,6 +157,9 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          throw new Error(await authErrorMessage(response));
+        }
         let errorMessage = `Error: ${response.status} - ${response.statusText}`;
         if (response.status === 500) {
           try {
@@ -210,8 +214,11 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
 
   const downloadIdsTemplate = useCallback(async () => {
     try {
-      const response = await fetch(IDS_TEMPLATE_URL, { method: 'GET', headers: AUTH_HEADER });
-      if (!response.ok) throw new Error(`Failed to download template (${response.status})`);
+      const response = await fetch(IDS_TEMPLATE_URL, { method: 'GET', headers: bearerHeaders() });
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) throw new Error(await authErrorMessage(response));
+        throw new Error(`Failed to download template (${response.status})`);
+      }
 
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
@@ -255,12 +262,13 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       const encodedPct = encodeURIComponent(pctNumber.trim());
       const claimsRes = await fetch(`${CLAIMS_API_BASE}?pctNumber=${encodedPct}`, {
         method: 'GET',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded', ...AUTH_HEADER },
+        headers: bearerHeaders({ 'Content-Type': 'application/x-www-form-urlencoded' }),
         signal: controller.signal,
       });
       clearTimeout(timeoutId);
 
       if (!claimsRes.ok) {
+        if (claimsRes.status === 401 || claimsRes.status === 403) throw new Error(await authErrorMessage(claimsRes));
         if (claimsRes.status === 404) throw new Error('Application not found. Please check the PCT number.');
         let msg = `Error: ${claimsRes.status} - ${claimsRes.statusText}`;
         try {
