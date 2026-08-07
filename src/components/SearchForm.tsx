@@ -132,8 +132,8 @@ export const SearchForm = () => {
         <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
           <FileText className="h-6 w-6 text-primary" />
         </div>
-        <CardTitle className="text-2xl font-semibold">Document Filling System</CardTitle>
-        <CardDescription>Enter your PCT number to retrieve the document</CardDescription>
+        <CardTitle className="text-2xl font-semibold">PCT to U.S. Document Preparation</CardTitle>
+        <CardDescription>Enter your PCT number to generate the documents</CardDescription>
       </CardHeader>
 
       <CardContent>
@@ -247,7 +247,7 @@ export const SearchForm = () => {
               >
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="database" id="idsSource-database" />
-                  <Label htmlFor="idsSource-database" className="text-sm font-normal cursor-pointer">From Database</Label>
+                  <Label htmlFor="idsSource-database" className="text-sm font-normal cursor-pointer">From PCT Search Report</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="excel" id="idsSource-excel" />

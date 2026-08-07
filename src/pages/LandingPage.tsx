@@ -18,9 +18,9 @@ interface ChainNode {
 }
 
 const CHAIN: ChainNode[] = [
-  { app: '63/991,246', docket: 'QOG-PROV2', status: 'Provisional', variant: 'docketed' },
-  { app: '18/210,593', docket: 'SYG-MO-P01A', status: 'In prosecution', variant: 'active', edge: 'claims priority' },
-  { app: '16/394,220', docket: 'WON-P001', status: 'Patent 11,842,109', variant: 'granted', edge: 'continuation of' },
+  { app: '63/991,2XX', docket: 'QPR-P002', status: 'Provisional', variant: 'docketed' },
+  { app: '18/210,5XX', docket: 'SYG-45676A', status: 'In prosecution', variant: 'active', edge: 'claims priority' },
+  { app: '16/394,2XX', docket: 'WON-P001', status: 'Patent 11,XXX,XXX', variant: 'granted', edge: 'continuation of' },
 ];
 
 const dot: Record<ChainNode['variant'], string> = {
@@ -39,19 +39,19 @@ const CAPABILITIES = [
     icon: FileText,
     label: 'CREATE',
     title: 'Filing documents',
-    body: 'Generate filing-ready IDS transmittals, declarations, assignments, and preliminary amendments from an application number or your own data — formatted and ready to submit.',
+    body: 'Generate filing-ready IDS transmittals, declarations, assignments, and preliminary amendments from a WIPO or USPTO application number—ready to review and file.',
   },
   {
     icon: Building2,
     label: 'RETRIEVE',
     title: 'USPTO data',
-    body: 'Pull live application status, bibliographic details, and file-wrapper history straight from the USPTO — no re-keying application numbers by hand.',
+    body: 'Retrieve live application status, bibliographic data, and complete file-wrapper history directly from the USPTO—without manual data entry.(coming soon)',
   },
   {
     icon: GitBranch,
     label: 'TRACE',
     title: 'Continuity chains',
-    body: 'Walk parent and child applications across a family, with your attorney docket numbers mapped onto every application in the chain.',
+    body: 'Visualize complete parent-child application relationships for US applications while automatically mapping your internal docket numbers across the entire patent family.',
   },
 ];
 
@@ -85,11 +85,10 @@ const LandingPage = () => {
             Patent prosecution workspace
           </p>
           <h1 className="font-serif text-4xl font-semibold leading-[1.1] tracking-tight md:text-5xl">
-            From docket number to filed document.
+            From WIPO Application to USPTO Filing Documents
           </h1>
           <p className="mt-5 max-w-md text-base leading-relaxed text-muted-foreground">
-            Patmimo pulls USPTO application data, maps it to your dockets, drafts the paperwork, and
-            traces continuity — so patent teams spend time on prosecution, not transcription.
+            Turn a WIPO application number into a complete USPTO filing package. Patmimo automates document preparation, docket mapping, and continuity tracking in minutes.
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <Button asChild size="lg">
@@ -185,7 +184,7 @@ const LandingPage = () => {
       <footer className="border-t border-border">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
           <span className="font-serif text-sm font-semibold">Patmimo</span>
-          <span className="font-mono text-[11px] text-muted-foreground">Patent document filing</span>
+          <span className="font-mono text-[11px] text-muted-foreground">Patent Prosecution Workspace © 2025, All Rights Reserved</span>
         </div>
       </footer>
     </div>
