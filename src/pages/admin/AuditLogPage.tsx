@@ -66,7 +66,7 @@ const AuditLogPage = () => {
     <div className="mx-auto max-w-6xl p-4 md:p-6">
       <div className="mb-6">
         <h1 className="font-serif text-2xl font-semibold">Audit Log</h1>
-        <p className="text-sm text-muted-foreground">Every request against the admin backend. Read-only.</p>
+        <p className="text-sm text-muted-foreground">Sign-ins, document generation, lookups, and admin changes. Read-only.</p>
       </div>
 
       {/* Filter bar */}
@@ -124,38 +124,33 @@ const AuditLogPage = () => {
             <TableRow>
               <TableHead className="w-8" />
               <TableHead>Time</TableHead>
-              <TableHead>Actor</TableHead>
-              <TableHead>Action / Method</TableHead>
-              <TableHead>Path</TableHead>
+              <TableHead>Activity</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Target</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow><TableCell colSpan={7} className="h-24 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" /></TableCell></TableRow>
+              <TableRow><TableCell colSpan={4} className="h-24 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" /></TableCell></TableRow>
             ) : rows.length === 0 ? (
-              <TableRow><TableCell colSpan={7} className="h-24 text-center text-sm text-muted-foreground">No entries.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={4} className="h-24 text-center text-sm text-muted-foreground">No entries.</TableCell></TableRow>
             ) : (
               rows.map((r) => (
                 <Fragment key={r.id}>
                   <TableRow className="cursor-pointer" onClick={() => setExpanded(expanded === r.id ? null : r.id)}>
                     <TableCell>{expanded === r.id ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}</TableCell>
                     <TableCell className="whitespace-nowrap text-xs text-muted-foreground">{new Date(r.created_at).toLocaleString()}</TableCell>
-                    <TableCell className="text-xs">{r.actor_email ?? <span className="text-muted-foreground">—</span>}</TableCell>
-                    <TableCell className="text-xs">{r.action ?? <span className="font-mono">{r.method}</span>}</TableCell>
-                    <TableCell className="max-w-[240px] truncate font-mono text-xs">{r.path}</TableCell>
+                    <TableCell className="text-sm">{r.summary ?? <span className="text-muted-foreground">{r.actor_name ?? r.actor_email ?? 'Someone'} — {r.action ?? r.method}</span>}</TableCell>
                     <TableCell className={`text-xs ${statusClass(r.status_code)}`}>{r.status_code}</TableCell>
-                    <TableCell className="max-w-[160px] truncate font-mono text-xs text-muted-foreground">{r.target_id ?? '—'}</TableCell>
                   </TableRow>
                   {expanded === r.id && (
                     <TableRow key={`${r.id}-detail`} className="bg-muted/30">
                       <TableCell />
-                      <TableCell colSpan={6} className="text-xs">
+                      <TableCell colSpan={3} className="text-xs">
                         <div className="grid gap-1 py-1">
-                          <div><span className="text-muted-foreground">Method:</span> <span className="font-mono">{r.method}</span> · <span className="text-muted-foreground">Duration:</span> {r.duration_ms ?? '—'} ms</div>
-                          <div><span className="text-muted-foreground">IP:</span> {r.ip ?? '—'}</div>
-                          <div className="truncate"><span className="text-muted-foreground">User agent:</span> {r.user_agent ?? '—'}</div>
+                          <div><span className="text-muted-foreground">Actor:</span> {r.actor_email ?? '—'}{r.action ? <> · <span className="text-muted-foreground">Action:</span> <span className="font-mono">{r.action}</span></> : null}</div>
+                          <div><span className="text-muted-foreground">Request:</span> <span className="font-mono">{r.method} {r.path}</span></div>
+                          <div><span className="text-muted-foreground">Target:</span> <span className="font-mono">{r.target_id ?? '—'}</span> · <span className="text-muted-foreground">Duration:</span> {r.duration_ms ?? '—'} ms</div>
+                          <div className="truncate"><span className="text-muted-foreground">IP:</span> {r.ip ?? '—'} · <span className="text-muted-foreground">Agent:</span> {r.user_agent ?? '—'}</div>
                           {r.detail && (
                             <pre className="mt-1 overflow-x-auto rounded bg-background p-2 text-[11px]">{JSON.stringify(r.detail, null, 2)}</pre>
                           )}

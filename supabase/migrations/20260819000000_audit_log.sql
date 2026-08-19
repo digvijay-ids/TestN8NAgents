@@ -7,10 +7,12 @@ create table if not exists public.audit_log (
   created_at   timestamptz not null default now(),
   actor_id     uuid,                 -- null for pre-auth failures (bad/expired token)
   actor_email  text,                 -- denormalized for display without a join
+  actor_name   text,                 -- resolved full name (email fallback) for display
+  summary      text,                 -- human sentence, e.g. "Digvijay Singh logged in successfully"
   method       text not null,
   path         text not null,
   status_code  int  not null,
-  action       text,                 -- e.g. user.deactivate (mutations only)
+  action       text,                 -- e.g. user.deactivate
   target_id    text,                 -- affected entity id
   detail       jsonb,                -- redacted change detail, e.g. {"is_active": false}
   ip           text,

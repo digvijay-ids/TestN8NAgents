@@ -7,6 +7,8 @@ export interface AuditRow {
   created_at: string;
   actor_id: string | null;
   actor_email: string | null;
+  actor_name: string | null;
+  summary: string | null;
   method: string;
   path: string;
   status_code: number;
