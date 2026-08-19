@@ -29,6 +29,7 @@ const UsersAdminPage = () => {
   const [pages, setPages] = useState<Page[]>([]);
   const [userRoles, setUserRolesState] = useState<RoleMap>({});
   const [overrides, setOverrides] = useState<OverrideMap>({});
+  const [pendingActive, setPendingActive] = useState<Set<string>>(new Set());
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -55,12 +56,24 @@ const UsersAdminPage = () => {
   useEffect(() => { void reload(); }, [reload]);
 
   const toggleActive = async (user: Profile) => {
+    if (pendingActive.has(user.id)) return; // ignore rapid re-clicks while in flight
+    const next = !user.is_active;
+    // Optimistically flip just this row — no full-screen reload.
+    setProfiles((prev) => prev.map((p) => (p.id === user.id ? { ...p, is_active: next } : p)));
+    setPendingActive((prev) => new Set(prev).add(user.id));
     try {
-      await setUserActive(user.id, !user.is_active);
-      toast.success(`${user.email} ${!user.is_active ? 'activated' : 'deactivated'}`);
-      void reload();
+      await setUserActive(user.id, next);
+      toast.success(`${user.email} ${next ? 'activated' : 'deactivated'}`);
     } catch (e) {
+      // Update failed — revert the toggle to its previous position.
+      setProfiles((prev) => prev.map((p) => (p.id === user.id ? { ...p, is_active: user.is_active } : p)));
       toast.error(e instanceof Error ? e.message : 'Update failed');
+    } finally {
+      setPendingActive((prev) => {
+        const nextSet = new Set(prev);
+        nextSet.delete(user.id);
+        return nextSet;
+      });
     }
   };
 
@@ -105,7 +118,7 @@ const UsersAdminPage = () => {
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Switch checked={u.is_active} onCheckedChange={() => toggleActive(u)} />
+                  <Switch checked={u.is_active} disabled={pendingActive.has(u.id)} onCheckedChange={() => toggleActive(u)} />
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
