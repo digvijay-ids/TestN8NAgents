@@ -1,4 +1,4 @@
-import { FileText, GitBranch, Scroll, Building2, Users, Shield, FileCog, LogOut, UserCog } from "lucide-react";
+import { FileText, GitBranch, Scroll, Building2, Users, Shield, FileCog, ScrollText, LogOut, UserCog } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation, useNavigate } from "react-router-dom";
 import type { LucideIcon } from "lucide-react";
@@ -34,6 +34,7 @@ const adminItems: NavItem[] = [
   { title: "Users", url: "/admin/users", icon: Users },
   { title: "Roles", url: "/admin/roles", icon: Shield },
   { title: "Pages", url: "/admin/pages", icon: FileCog },
+  { title: "Audit Log", url: "/admin/audit-log", icon: ScrollText },
 ];
 
 export function AppSidebar() {

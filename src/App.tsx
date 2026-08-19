@@ -16,6 +16,7 @@ import NotFound from "./pages/NotFound";
 import UsersAdminPage from "./pages/admin/UsersAdminPage";
 import RolesAdminPage from "./pages/admin/RolesAdminPage";
 import PagesAdminPage from "./pages/admin/PagesAdminPage";
+import AuditLogPage from "./pages/admin/AuditLogPage";
 import { AppStateProvider } from "./context/AppStateContext";
 import { AuthProvider } from "./context/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -68,6 +69,10 @@ const App = () => (
                 <Route
                   path="/admin/pages"
                   element={<ProtectedRoute requireSuperAdmin><PagesAdminPage /></ProtectedRoute>}
+                />
+                <Route
+                  path="/admin/audit-log"
+                  element={<ProtectedRoute requireSuperAdmin><AuditLogPage /></ProtectedRoute>}
                 />
               </Route>
 
