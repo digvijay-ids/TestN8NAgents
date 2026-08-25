@@ -6,10 +6,10 @@
 import { getAccessToken } from '@/lib/authApi';
 
 const BACKEND_URL =
-  (import.meta.env.VITE_BACKEND_URL as string | undefined)?.replace(/\/$/, '') ?? 'https://docfilling-api.noetherip.com';
+  (import.meta.env.VITE_BACKEND_URL as string | undefined)?.replace(/\/$/, '') ?? 'http://localhost:8000';
 
 // DocProcessing now lives behind the patmimo-utilities proxy.
-export const API_BASE_URL = `https://docfilling-api.noetherip.com/api/DocProcessing`;
+export const API_BASE_URL = `http://localhost:8000/api/DocProcessing`;
 
 export const GENERATE_DOC_URL = `${API_BASE_URL}/generate`;
 export const GENERATE_FROM_USPTO_URL = `${API_BASE_URL}/generate-from-uspto`;
