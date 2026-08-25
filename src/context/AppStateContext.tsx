@@ -78,7 +78,7 @@ const defaultClaimsState: ClaimsState = {
 
 const N8N_WEBHOOK_URL =
   import.meta.env.VITE_CLAIMS_WEBHOOK_URL ??
-  'https://docfilling-api.noetherip.com/api/claims?';
+  'http://localhost:8000/api/claims?';
 
 // ─── Context shape ────────────────────────────────────────────────────────────
 
@@ -147,9 +147,15 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
         if (firstNamedInventor?.trim()) formData.append('firstNamedInventor', firstNamedInventor.trim());
       }
       console.log('GENERATE_DOC_URL:', GENERATE_DOC_URL);
+      // Feature 1509: send the user's timezone so generated file names use the
+      // local generation date. X-Timezone is an IANA id; the offset is a fallback.
+      const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
       const response = await fetch(GENERATE_DOC_URL, {
         method: 'POST',
-        headers: bearerHeaders(),
+        headers: bearerHeaders({
+          'X-Timezone': timeZone,
+          'X-Timezone-Offset': String(new Date().getTimezoneOffset()),
+        }),
         body: formData,
         signal: controller.signal,
       });
