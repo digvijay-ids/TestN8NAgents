@@ -4,7 +4,7 @@
  */
 
 export const USPTO_API_BASE_URL =
-  import.meta.env.VITE_USPTO_API_BASE_URL ?? 'http://localhost:8000/api/uspto';
+  import.meta.env.VITE_USPTO_API_BASE_URL ?? 'https://docfilling-api.noetherip.com/api/uspto';
 
 /** Continuity (parent/child) endpoint for a given application number. */
 export function continuityUrl(applicationNumber: string): string {
