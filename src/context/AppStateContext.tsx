@@ -78,7 +78,7 @@ const defaultClaimsState: ClaimsState = {
 
 const N8N_WEBHOOK_URL =
   import.meta.env.VITE_CLAIMS_WEBHOOK_URL ??
-  'http://localhost:8000/api/claims?';
+  'https://docfilling-api.noetherip.com/api/claims?';
 
 // ─── Context shape ────────────────────────────────────────────────────────────
 

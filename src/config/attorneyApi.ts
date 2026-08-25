@@ -1,6 +1,6 @@
 export const ATTORNEY_SEARCH_URL =
   import.meta.env.VITE_ATTORNEY_SEARCH_URL ??
-  'http://localhost:8000/api/attorneys/search';
+  'https://docfilling-api.noetherip.com/api/attorneys/search';
 
 export const USE_MOCK_ATTORNEY_API =
   import.meta.env.VITE_USE_MOCK_ATTORNEY_API === 'true';
