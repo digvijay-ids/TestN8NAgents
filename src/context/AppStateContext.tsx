@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { GENERATE_DOC_URL, IDS_TEMPLATE_URL, bearerHeaders, REQUEST_TIMEOUT, CLAIMS_API_BASE } from '@/config/api';
 import { authErrorMessage } from '@/lib/authApi';
-import { DocType } from '@/types/docTypes';
+import { DocType, EntityType } from '@/types/docTypes';
 import { Attorney } from '@/types/attorney';
 
 // ─── Documents page state ────────────────────────────────────────────────────
@@ -16,6 +16,7 @@ export interface DocumentsState {
   docketNumber: string;
   customerNumber: string;
   numberOfSheets: string;
+  entityType: EntityType;
 }
 
 const defaultDocumentsState: DocumentsState = {
@@ -28,6 +29,7 @@ const defaultDocumentsState: DocumentsState = {
   docketNumber: '',
   customerNumber: '',
   numberOfSheets: '',
+  entityType: EntityType.Large,
 };
 
 // ─── Claims page state ───────────────────────────────────────────────────────
@@ -78,14 +80,14 @@ const defaultClaimsState: ClaimsState = {
 
 const N8N_WEBHOOK_URL =
   import.meta.env.VITE_CLAIMS_WEBHOOK_URL ??
-  'https://docfilling-api.noetherip.com/api/claims?';
+  'http:localhost:8000/api/claims?';
 
 // ─── Context shape ────────────────────────────────────────────────────────────
 
 interface AppStateContextValue {
   documents: DocumentsState;
-  setDocumentsFormValues: (pctNumber: string, docTypes: DocType[], docketNumber: string, customerNumber: string, numberOfSheets: string) => void;
-  searchFile: (pctNumber: string, docTypes: DocType[], attorney?: Attorney | null, docketNumber?: string, customerNumber?: string, numberOfSheets?: string, idsExcel?: File | null, firstNamedInventor?: string) => Promise<void>;
+  setDocumentsFormValues: (pctNumber: string, docTypes: DocType[], docketNumber: string, customerNumber: string, numberOfSheets: string, entityType: EntityType) => void;
+  searchFile: (pctNumber: string, docTypes: DocType[], attorney?: Attorney | null, docketNumber?: string, customerNumber?: string, numberOfSheets?: string, idsExcel?: File | null, firstNamedInventor?: string, entityType?: EntityType) => Promise<void>;
   downloadFile: () => void;
   downloadIdsTemplate: () => Promise<void>;
   resetDocuments: () => void;
@@ -105,11 +107,11 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   const [claims, setClaims] = useState<ClaimsState>(defaultClaimsState);
 
   // Documents helpers
-  const setDocumentsFormValues = useCallback((pctNumber: string, docTypes: DocType[], docketNumber: string, customerNumber: string, numberOfSheets: string) => {
-    setDocuments(prev => ({ ...prev, pctNumber, docTypes, docketNumber, customerNumber, numberOfSheets }));
+  const setDocumentsFormValues = useCallback((pctNumber: string, docTypes: DocType[], docketNumber: string, customerNumber: string, numberOfSheets: string, entityType: EntityType) => {
+    setDocuments(prev => ({ ...prev, pctNumber, docTypes, docketNumber, customerNumber, numberOfSheets, entityType }));
   }, []);
 
-  const searchFile = useCallback(async (pctNumber: string, docTypes: DocType[], attorney?: Attorney | null, docketNumber?: string, customerNumber?: string, numberOfSheets?: string, idsExcel?: File | null, firstNamedInventor?: string) => {
+  const searchFile = useCallback(async (pctNumber: string, docTypes: DocType[], attorney?: Attorney | null, docketNumber?: string, customerNumber?: string, numberOfSheets?: string, idsExcel?: File | null, firstNamedInventor?: string, entityType?: EntityType) => {
     setDocuments({
       isLoading: true,
       error: null,
@@ -120,6 +122,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       docketNumber: docketNumber ?? '',
       customerNumber: customerNumber ?? '',
       numberOfSheets: numberOfSheets ?? '',
+      entityType: entityType ?? EntityType.Large,
     });
 
     try {
@@ -135,6 +138,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       if (docketNumber?.trim()) formData.append('docketNumber', docketNumber.trim());
       if (customerNumber?.trim()) formData.append('customerNumber', customerNumber.trim());
       if (numberOfSheets?.trim() && Number(numberOfSheets) > 0) formData.append('numberOfSheets', String(Number(numberOfSheets)));
+      formData.append('entityType', entityType ?? EntityType.Large);
       if (attorney) {
         if (attorney.firstName) formData.append('Attorney.FirstName', attorney.firstName);
         if (attorney.middleName) formData.append('Attorney.MiddleName', attorney.middleName);
