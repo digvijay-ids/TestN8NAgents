@@ -28,6 +28,60 @@ export enum DocType {
 }
 
 /**
+ * USPTO fee entity status. Determines the fee tier applied to generated
+ * documents (e.g. the PCT Transmittal / PTO-1390 fee calculation).
+ */
+export enum EntityType {
+  Large = 'large',
+  Small = 'small',
+  Micro = 'micro',
+}
+
+/**
+ * Entity type options for UI display
+ */
+export const ENTITY_TYPE_OPTIONS = [
+  { value: EntityType.Large, label: 'Large Entity' },
+  { value: EntityType.Small, label: 'Small Entity' },
+  { value: EntityType.Micro, label: 'Micro Entity' },
+] as const;
+
+/**
+ * Explanatory copy shown in the info tooltip beside the entity-type selector.
+ * Split into paragraphs so the tooltip can render readable line breaks.
+ */
+export const MICRO_ENTITY_INFO = {
+  intro:
+    'To qualify for Micro Entity status based on gross income, all of the following requirements must be met:',
+  requirements: [
+    {
+      label: 'Small Entity Status:',
+      text: 'The applicant, inventors, and anyone with an ownership interest must qualify as a Small Entity (e.g., an eligible small business, nonprofit organization, or individual).',
+    },
+    {
+      label: 'Filing Limit:',
+      text: 'The inventor(s) must not have been named as an inventor on more than four previously filed patent applications, subject to certain exceptions.',
+    },
+    {
+      label: 'Income Limit:',
+      text: 'The applicant and each inventor must have had a gross income below the applicable USPTO maximum qualifying gross income limit in the previous calendar year.',
+    },
+    {
+      label: 'Ownership Interest:',
+      text: 'The applicant/inventor must not have assigned, licensed, or otherwise granted an ownership interest in the invention to an entity whose gross income exceeds the applicable limit.',
+    },
+  ],
+  notes: [
+    'Important: The income and ownership requirements can apply to parties who have an ownership interest even if they are not listed as an applicant or assignee in the USPTO records.',
+    'A valid Micro Entity Certification (e.g., USPTO Form SB/15A) must also be properly completed, identify the relevant application or patent, and contain the required authorized signature(s).',
+    'Eligibility should be confirmed each time a fee is paid, as Micro Entity status may change.',
+  ],
+  linkText: 'For more Information visit USPTO Micro Entity Status',
+  linkUrl:
+    'https://www.uspto.gov/patents/laws/micro-entity-status#Gross%20Income%20Basis',
+} as const;
+
+/**
  * Document type options for UI display
  */
 export const DOC_TYPE_OPTIONS = [

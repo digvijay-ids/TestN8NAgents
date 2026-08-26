@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Search, Download, Loader2, FileText, AlertCircle } from 'lucide-react';
+import { Search, Download, Loader2, FileText, AlertCircle, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAppState } from '@/context/AppStateContext';
-import { DocType, DOC_TYPE_OPTIONS } from '@/types/docTypes';
+import { DocType, DOC_TYPE_OPTIONS, EntityType, ENTITY_TYPE_OPTIONS, MICRO_ENTITY_INFO } from '@/types/docTypes';
 import { AttorneySelect } from '@/components/AttorneySelect';
 import { loadAttorney } from '@/lib/attorneyStorage';
 
@@ -20,6 +21,7 @@ export const SearchForm = () => {
   const [docketNumber, setDocketNumber] = useState(documents.docketNumber);
   const [customerNumber, setCustomerNumber] = useState(documents.customerNumber);
   const [numberOfSheets, setNumberOfSheets] = useState(documents.numberOfSheets);
+  const [entityType, setEntityType] = useState<EntityType>(documents.entityType);
   const [validationError, setValidationError] = useState<string | null>(null);
 
   // IDS can be generated either from the database (existing flow) or from an uploaded Excel workbook.
@@ -41,8 +43,8 @@ export const SearchForm = () => {
 
   // Keep context form values in sync (so they survive the next unmount)
   useEffect(() => {
-    setDocumentsFormValues(pctNumber, selectedDocTypes, docketNumber, customerNumber, numberOfSheets);
-  }, [pctNumber, selectedDocTypes, docketNumber, customerNumber, numberOfSheets, setDocumentsFormValues]);
+    setDocumentsFormValues(pctNumber, selectedDocTypes, docketNumber, customerNumber, numberOfSheets, entityType);
+  }, [pctNumber, selectedDocTypes, docketNumber, customerNumber, numberOfSheets, entityType, setDocumentsFormValues]);
 
   const validatePctFormat = (value: string): string | null => {
     const trimmed = value.trim().toUpperCase();
@@ -99,6 +101,7 @@ export const SearchForm = () => {
       numberOfSheets.trim(),
       useExcelIds ? idsExcelFile : null,
       useExcelIds ? firstNamedInventor.trim() : undefined,
+      entityType,
     );
   };
 
@@ -117,6 +120,7 @@ export const SearchForm = () => {
     setDocketNumber('');
     setCustomerNumber('');
     setNumberOfSheets('');
+    setEntityType(EntityType.Large);
     setIdsSource('database');
     setIdsExcelFile(null);
     setFirstNamedInventor('');
@@ -213,6 +217,65 @@ export const SearchForm = () => {
               />
             </div>
           )}
+
+          <div className="space-y-3">
+            <div className="flex items-center gap-1.5">
+              <Label className="text-sm font-medium text-foreground">Select Entity Type</Label>
+              <TooltipProvider delayDuration={100}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label="Micro Entity qualification requirements"
+                      className="text-muted-foreground hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full"
+                    >
+                      <Info className="h-4 w-4" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="right"
+                    align="start"
+                    className="max-w-sm max-h-[70vh] overflow-y-auto space-y-2 text-xs leading-relaxed"
+                  >
+                    <p>{MICRO_ENTITY_INFO.intro}</p>
+                    <ul className="space-y-1.5">
+                      {MICRO_ENTITY_INFO.requirements.map((req) => (
+                        <li key={req.label}>
+                          <span className="font-semibold">{req.label}</span> {req.text}
+                        </li>
+                      ))}
+                    </ul>
+                    {MICRO_ENTITY_INFO.notes.map((note) => (
+                      <p key={note}>{note}</p>
+                    ))}
+                    <a
+                      href={MICRO_ENTITY_INFO.linkUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block underline underline-offset-2"
+                    >
+                      {MICRO_ENTITY_INFO.linkText}
+                    </a>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+            <RadioGroup
+              value={entityType}
+              onValueChange={(value) => setEntityType(value as EntityType)}
+              disabled={isLoading}
+              className="space-y-1"
+            >
+              {ENTITY_TYPE_OPTIONS.map((option) => (
+                <div key={option.value} className="flex items-center space-x-2">
+                  <RadioGroupItem value={option.value} id={`entityType-${option.value}`} />
+                  <Label htmlFor={`entityType-${option.value}`} className="text-sm font-normal cursor-pointer">
+                    {option.label}
+                  </Label>
+                </div>
+              ))}
+            </RadioGroup>
+          </div>
 
           <div className="space-y-3">
             <Label className="text-sm font-medium text-foreground">Document Type</Label>
